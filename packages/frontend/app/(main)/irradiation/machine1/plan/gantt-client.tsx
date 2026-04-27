@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { gantt } from "dhtmlx-gantt";
+import type { Link } from "dhtmlx-gantt";
 import "dhtmlx-gantt/codebase/dhtmlxgantt.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -142,7 +143,10 @@ export function GanttClient() {
 
     const plan = plans.find((p) => p.planId === activePlanId);
     const { data: taskData, links } = normalizePayload(plan?.json);
-    gantt.parse({ data: taskData.length ? taskData : [{ id: 1, text: "新規タスク", start_date: new Date().toISOString().slice(0, 10), duration: 1 }], links });
+    gantt.parse({
+      data: taskData.length ? taskData : [{ id: 1, text: "新規タスク", start_date: new Date().toISOString().slice(0, 10), duration: 1 }],
+      links: links as Link[],
+    });
 
     const dragEv = gantt.attachEvent("onAfterTaskDrag", () => {
       scheduleSave();

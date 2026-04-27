@@ -1,0 +1,21 @@
+{
+  "name": "sdc-web",
+  "private": true,
+  "packageManager": "npm@10.9.2",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "db:generate": "npm run db:generate -w @sdc/backend",
+    "db:migrate": "npm run db:migrate -w @sdc/backend",
+    "db:push": "npm run db:push -w @sdc/backend"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3"
+  }
+}

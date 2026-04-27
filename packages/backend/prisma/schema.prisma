@@ -1,0 +1,420 @@
+// SDC — Oracle/Access 由来テーブルは @@map で物理名を維持
+// カラムは仕様書で確定したものを優先。未確定は後続マイグレーションで拡張可能な最小形。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  manager
+  operator
+  viewer
+}
+
+// --- Web 新規 ---
+
+model User {
+  id           String   @id @default(cuid())
+  employeeId   String   @unique @map("employee_id")
+  role         UserRole @default(viewer)
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  shain Shainmst @relation(fields: [employeeId], references: [shano])
+
+  @@map("users")
+}
+
+model WebSession {
+  sessionId String @id @map("session_id") @db.VarChar(128)
+  expires   Int    @map("expires")
+  data      String @map("data") @db.MediumText
+
+  @@map("web_sessions")
+}
+
+model CorrectionCoefficient {
+  id            String   @id @default(cuid())
+  name          String
+  value         Decimal  @db.Decimal(24, 12)
+  effectiveFrom DateTime @map("effective_from") @db.Date
+
+  @@map("correction_coefficients")
+}
+
+// --- マスタ ---
+
+model Tokumst {
+  kaisyacd String  @id @map("kaisyacd")
+  coname   String
+  kairname String? @map("kairname")
+
+  @@map("tokumst")
+}
+
+model Sehmst {
+  kaisyacd String  @map("kaisyacd")
+  sehncd   String  @map("sehncd")
+  seiname  String
+  syouho   String?
+
+  @@id([kaisyacd, sehncd])
+  @@map("sehmst")
+}
+
+model Shainmst {
+  shano   String  @id @map("shano")
+  shaname String  @map("shaname")
+  shask   String? @map("shask")
+  hshika  String? @map("hshika")
+  cshika  String? @map("cshika")
+
+  users User[]
+
+  @@map("shainmst")
+}
+
+model Senkind {
+  kindcd String  @id @map("kindcd")
+  name   String?
+
+  @@map("senkind")
+}
+
+model Keicode {
+  keicode String  @id @map("keicode")
+  keisiki String? @map("keisiki")
+
+  @@map("keicode")
+}
+
+model Kcdcnvmst {
+  gammacd String @map("gammacd")
+  ebcd    String @map("ebcd")
+  memo    String?
+
+  @@id([gammacd, ebcd])
+  @@map("kcdcnvmst")
+}
+
+model Tsyjmst {
+  chumoncd String  @id @map("chumoncd")
+  kaisyacd String? @map("kaisyacd")
+  biko     String?
+
+  @@map("tsyjmst")
+}
+
+// --- 在庫・出荷 ---
+
+model Zaiko {
+  uno      String  @id @map("uno")
+  kaisyacd String  @map("kaisyacd")
+  sehncd   String  @map("sehncd")
+  syouso   String? @map("syouso")
+  kainame  String? @map("kainame")
+  nouki    String? @map("nouki")
+  pass     String? @map("pass")
+  nyukabi  String? @map("nyukabi")
+  nyukasu  Int?    @map("nyukasu")
+  incnt    Int?    @map("incnt")
+
+  @@map("zaiko")
+}
+
+model Zaikor {
+  uno      String  @id @map("uno")
+  kaisyacd String  @map("kaisyacd")
+  sehncd   String  @map("sehncd")
+  syouso   String? @map("syouso")
+  kainame  String? @map("kainame")
+  nouki    String? @map("nouki")
+  pass     String? @map("pass")
+  nyukabi  String? @map("nyukabi")
+  nyukasu  Int?    @map("nyukasu")
+  incnt    Int?    @map("incnt")
+
+  @@map("zaikor")
+}
+
+model Syukar {
+  id       BigInt @id @default(autoincrement())
+  kaisyacd String @map("kaisyacd")
+  syudate  String @map("syudate")
+  syukasu  Int?   @map("syukasu")
+
+  @@index([kaisyacd, syudate])
+  @@map("syukar")
+}
+
+// --- 照射データ ---
+
+model Syouk1 {
+  uno     String   @id @map("uno")
+  syono   String?  @map("syono")
+  kainame String?  @map("kainame")
+  siteisn String?  @map("siteisn")
+  syosuu  Int?     @map("syosuu")
+  syoichi String?  @map("syoichi")
+  syotime String?  @map("syotime")
+  hansuu  Int?     @map("hansuu")
+  stimer  String?  @map("stimer")
+  ktimer  String?  @map("ktimer")
+  senritu Decimal? @map("senritu") @db.Decimal(18, 6)
+  syostat String?  @map("syostat")
+  ctimer  String?  @map("ctimer")
+  zhansuu Int?     @map("zhansuu")
+  htimer  String?  @map("htimer")
+  slotno  String?  @map("slotno")
+  sdate   String?  @map("sdate")
+  edate   String?  @map("edate")
+  updfflg String?  @map("updfflg")
+  syokind String?  @map("syokind")
+  bikou   String?  @map("bikou")
+
+  @@map("syouk1")
+}
+
+model Syouk2 {
+  uno     String   @id @map("uno")
+  syono   String?  @map("syono")
+  kainame String?  @map("kainame")
+  syokind String?  @map("syokind")
+  sdate   String?  @map("sdate")
+  edate   String?  @map("edate")
+  bikou   String?  @map("bikou")
+
+  @@map("syouk2")
+}
+
+model Syoukj3 {
+  uno     String   @id @map("uno")
+  syono   String?  @map("syono")
+  kainame String?  @map("kainame")
+  syokind String?  @map("syokind")
+  sdate   String?  @map("sdate")
+  edate   String?  @map("edate")
+  bikou   String?  @map("bikou")
+
+  @@map("syoukj3")
+}
+
+model Syouj1 {
+  jno     String  @id @map("jno")
+  uno     String? @map("uno")
+  meisai  String? @map("meisai")
+  status  String? @map("status")
+  bikou   String? @map("bikou")
+
+  @@map("syouj1")
+}
+
+model Syoujr1 {
+  jno     String  @id @map("jno")
+  uno     String? @map("uno")
+  meisai  String? @map("meisai")
+  archivedAt String? @map("archived_at")
+
+  @@map("syoujr1")
+}
+
+model Syouj2 {
+  jno     String  @id @map("jno")
+  uno     String? @map("uno")
+  meisai  String? @map("meisai")
+  status  String? @map("status")
+
+  @@map("syouj2")
+}
+
+model Syoujr2 {
+  jno     String  @id @map("jno")
+  uno     String? @map("uno")
+  meisai  String? @map("meisai")
+  archivedAt String? @map("archived_at")
+
+  @@map("syoujr2")
+}
+
+model Syouj3ov {
+  ovno    String  @id @map("ovno")
+  uno     String? @map("uno")
+  ovenId  String? @map("oven_id")
+  result  String? @map("result")
+  bikou   String? @map("bikou")
+
+  @@map("syouj3ov")
+}
+
+model Kansoku {
+  kid     String  @id @map("kid")
+  sokutei String? @map("sokutei")
+  bikou   String? @map("bikou")
+
+  @@map("kansoku")
+}
+
+model Ratetbl {
+  ratekey String  @id @map("ratekey")
+  rateval Decimal? @map("rateval") @db.Decimal(18, 8)
+
+  @@map("ratetbl")
+}
+
+model Sejofile {
+  fid   String @id @map("fid")
+  path  String? @map("path")
+  biko  String? @map("biko")
+
+  @@map("sejofile")
+}
+
+// --- センサー ---
+
+model Sengnr1 {
+  id     BigInt   @id @default(autoincrement())
+  sdate  String   @map("sdate")
+  stime  String?  @map("stime")
+  timer  Decimal? @map("timer") @db.Decimal(18, 4)
+  event  String?  @map("event")
+
+  @@index([sdate, stime])
+  @@map("sengnr1")
+}
+
+model Kyouj2 {
+  id      BigInt   @id @default(autoincrement())
+  rectime String   @map("rectime")
+  realspd Decimal? @map("realspd") @db.Decimal(18, 4)
+
+  @@index([rectime])
+  @@map("kyouj2")
+}
+
+model Sengnr3 {
+  id       BigInt   @id @default(autoincrement())
+  sdate    String   @map("sdate")
+  sekitime String?  @map("sekitime")
+  event    String?  @map("event")
+
+  @@index([sdate])
+  @@map("sengnr3")
+}
+
+// --- 拡張系 ---
+
+model ExSeihinj {
+  rowkey String @id @map("rowkey") @db.VarChar(128)
+  json   Json?  @map("json")
+
+  @@map("ex_seihinj")
+}
+
+model ExSeihinz {
+  rowkey String @id @map("rowkey") @db.VarChar(128)
+  json   Json?  @map("json")
+
+  @@map("ex_seihinz")
+}
+
+model ExKeikakuX {
+  rowkey String @id @map("rowkey") @db.VarChar(128)
+  json   Json?  @map("json")
+
+  @@map("ex_keikaku_x")
+}
+
+model ExYoyakuX {
+  rowkey String @id @map("rowkey") @db.VarChar(128)
+  json   Json?  @map("json")
+
+  @@map("ex_yoyaku_x")
+}
+
+model ExKanriTb {
+  sikibetu String  @id @map("sikibetu")
+  kousinn  String? @map("kousinn")
+  ricvm    String? @map("ricvm")
+  hppp     String? @map("hppp")
+
+  @@map("ex_kanri_tb")
+}
+
+model ExOvenTb {
+  ovenkey String @id @map("ovenkey") @db.VarChar(64)
+  json    Json?  @map("json")
+
+  @@map("ex_oven_tb")
+}
+
+model ExYasumiX {
+  ymd    String   @id @map("ymd") @db.VarChar(8)
+  reason String?  @map("reason")
+
+  @@map("ex_yasumi_x")
+}
+
+model ExR1Keikaku1 {
+  planId String @id @map("plan_id") @db.VarChar(64)
+  json   Json?  @map("json")
+
+  @@map("ex_r1_keikaku1")
+}
+
+model ExR1Keikaku2 {
+  detailId String @id @map("detail_id") @db.VarChar(64)
+  planId   String? @map("plan_id")
+  json     Json?  @map("json")
+
+  @@map("ex_r1_keikaku2")
+}
+
+model ExR3Stg {
+  stgId String @id @map("stg_id") @db.VarChar(64)
+  json  Json?  @map("json")
+
+  @@map("ex_r3_stg")
+}
+
+// --- 勤務（旧 Access）---
+
+model ShiftSchedule {
+  id         String   @id @default(cuid()) @map("id")
+  cycleStart DateTime @map("cycle_start") @db.Date
+  label      String?  @map("label")
+  raw        Json?    @map("raw")
+
+  @@map("shift_schedules")
+}
+
+model ShiftEmployee {
+  id    String  @id @default(cuid()) @map("id")
+  shano String  @map("shano")
+  note  String? @map("note")
+
+  @@map("shift_employees")
+}
+
+model WorkTime {
+  id     String  @id @default(cuid()) @map("id")
+  symbol String  @map("symbol")
+  hours  Decimal? @map("hours") @db.Decimal(8, 2)
+  memo   String? @map("memo")
+
+  @@map("work_times")
+}
+
+model CirculationList {
+  id       String  @id @default(cuid()) @map("id")
+  name     String  @map("name")
+  sortOrder Int?   @map("sort_order")
+
+  @@map("circulation_list")
+}

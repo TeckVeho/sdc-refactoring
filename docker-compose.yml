@@ -1,0 +1,26 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: sdc-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-sdc_dev_root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-sdc}
+      MYSQL_USER: ${MYSQL_USER:-sdc}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-sdc_dev}
+    ports:
+      - "${MYSQL_PORT:-33306}:3306"
+    volumes:
+      - sdc_mysql_data:/var/lib/mysql
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-sdc_dev_root}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+volumes:
+  sdc_mysql_data:

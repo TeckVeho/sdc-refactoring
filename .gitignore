@@ -1,1 +1,8 @@
 .DS_Store
+node_modules/
+dist/
+.next/
+.turbo/
+*.log
+packages/backend/.env
+.env.local

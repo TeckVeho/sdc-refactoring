@@ -1,8 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { gantt } from "dhtmlx-gantt";
-import type { Link } from "dhtmlx-gantt";
+import { gantt, type Link } from "dhtmlx-gantt";
 import "dhtmlx-gantt/codebase/dhtmlxgantt.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 

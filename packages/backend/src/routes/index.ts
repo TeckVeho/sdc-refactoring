@@ -6,11 +6,13 @@ import { inventoryRouter } from "./inventory/index.js";
 import { dosimetryRouter } from "./dosimetry/index.js";
 import { reportsRouter } from "./reports/index.js";
 import { adminRouter } from "./admin/index.js";
+import { dashboardRouter } from "./dashboard.js";
 
 const apiRouter = Router();
 
 apiRouter.use("/health", healthRouter);
 apiRouter.use("/auth", authRouter);
+apiRouter.use("/dashboard", dashboardRouter);
 apiRouter.use("/irradiation", irradiationRouter);
 apiRouter.use("/inventory", inventoryRouter);
 apiRouter.use("/dosimetry", dosimetryRouter);

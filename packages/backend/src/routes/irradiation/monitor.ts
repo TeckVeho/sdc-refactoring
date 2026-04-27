@@ -1,8 +1,18 @@
 import { Router } from "express";
 
+import { requireAuth } from "../../middleware/auth.js";
+import { getMachine1MonitorData } from "../../services/machine1-monitor.js";
+
 const monitorRouter = Router();
 
-// TODO: implement - GET /api/irradiation/machine1/monitor
-// 仕様書: docs/Ex1号機照射情報_仕様書.md
+/** GET /api/irradiation/machine1/monitor */
+monitorRouter.get("/", requireAuth, async (_req, res, next) => {
+  try {
+    const data = await getMachine1MonitorData();
+    res.json({ data });
+  } catch (e) {
+    next(e);
+  }
+});
 
 export { monitorRouter };

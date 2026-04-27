@@ -22,7 +22,8 @@ const LINE_COLORS = [
 
 interface TrendDataItem {
   time: string;
-  value: number;
+  /** 単一系列のとき。複数系列は dataKeys のみでも可 */
+  value?: number;
   [key: string]: unknown;
 }
 

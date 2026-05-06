@@ -1,13 +1,4 @@
-import dynamic from "next/dynamic";
-
-const GanttClient = dynamic(() => import("./gantt-client").then((m) => ({ default: m.GanttClient })), {
-  ssr: false,
-  loading: () => (
-    <div className="rounded-xl border border-cream-300 bg-cream-50/80 p-8 text-center text-sm text-ink-muted">
-      ガントチャートを読み込み中…
-    </div>
-  ),
-});
+import { Machine1PlanGanttDynamic } from "./gantt-dynamic";
 
 export default function IrradiationMachine1PlanPage() {
   return (
@@ -18,7 +9,7 @@ export default function IrradiationMachine1PlanPage() {
           タイムスケールは日単位です。バーをドラッグして日付を変更すると、自動で保存されます（数秒遅延）。
         </p>
       </div>
-      <GanttClient />
+      <Machine1PlanGanttDynamic />
     </div>
   );
 }

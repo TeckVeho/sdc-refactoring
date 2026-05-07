@@ -65,15 +65,10 @@ export default function ShipmentMethodReportPage() {
     void load();
   }, [load]);
 
-  const dirtyRows = useMemo(
-    () =>
-      rows.filter(
-        (r) =>
-          r.hikitoriCurrent.trim() !== r.hikitoriDb.trim() ||
-          r.housyubeCurrent.trim() !== r.housyubeDb.trim(),
-      ),
-    [rows],
-  );
+  const dirtyRows = useMemo(() => {
+    const t = (v: unknown) => String(v ?? "").trim();
+    return rows.filter((r) => t(r.hikitoriCurrent) !== t(r.hikitoriDb) || t(r.housyubeCurrent) !== t(r.housyubeDb));
+  }, [rows]);
 
   const updateRow = useCallback((kaisyacd: string, patch: Partial<Pick<Row, "hikitoriCurrent" | "housyubeCurrent">>) => {
     setRows((prev) =>

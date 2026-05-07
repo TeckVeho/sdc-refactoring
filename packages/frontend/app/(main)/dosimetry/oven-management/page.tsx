@@ -19,12 +19,13 @@ type OvenRowJson = {
 
 type ExOvenRow = { ovenkey: string; json: unknown };
 
+/** API / DB で数値が混入しうるため表示は cell() で正規化 */
 type Syouj3ovRow = {
-  ovno: string;
-  uno: string | null;
-  ovenId: string | null;
-  result: string | null;
-  bikou: string | null;
+  ovno: string | number;
+  uno: string | number | null;
+  ovenId: string | number | null;
+  result: string | number | null;
+  bikou: string | number | null;
 };
 
 type OvenManagementPayload = {
@@ -37,8 +38,9 @@ function parseOvenJson(raw: unknown): OvenRowJson {
   return raw as OvenRowJson;
 }
 
-function cell(s: string | undefined): string {
-  const t = (s ?? "").trim();
+function cell(s: unknown): string {
+  if (s == null) return "—";
+  const t = String(s).trim();
   return t.length > 0 ? t : "—";
 }
 
@@ -349,10 +351,10 @@ export default function DosimetryOvenManagementPage() {
               {(payload?.syouj3ov ?? []).slice(0, 200).map((r) => (
                 <tr key={r.ovno} className="border-b border-cream-200/80">
                   <td className="px-2 py-1.5 font-mono text-xs">{cell(r.ovno)}</td>
-                  <td className="px-2 py-1.5">{cell(r.uno ?? undefined)}</td>
-                  <td className="px-2 py-1.5">{cell(r.ovenId ?? undefined)}</td>
-                  <td className="px-2 py-1.5">{cell(r.result ?? undefined)}</td>
-                  <td className="px-2 py-1.5">{cell(r.bikou ?? undefined)}</td>
+                  <td className="px-2 py-1.5">{cell(r.uno)}</td>
+                  <td className="px-2 py-1.5">{cell(r.ovenId)}</td>
+                  <td className="px-2 py-1.5">{cell(r.result)}</td>
+                  <td className="px-2 py-1.5">{cell(r.bikou)}</td>
                 </tr>
               ))}
               {(!payload?.syouj3ov || payload.syouj3ov.length === 0) && !loading ? (

@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js";
+import { trimStr } from "../lib/trim-str.js";
 
 /**
  * Ex装置運転状況（docs/Ex装置運転状況_仕様書.md）
@@ -149,7 +150,7 @@ export async function getMachineStatusSnapshot(): Promise<MachineStatusSnapshot>
   ]);
 
   // --- 1号機 現在状態 ---
-  const e1 = latest1?.event?.trim() ?? "";
+  const e1 = trimStr(latest1?.event);
   const label1 = SENGNR1_EVENT_LABEL[e1] ?? (e1 ? `イベント(${e1})` : "データなし");
   const machine1: MachineStatusSnapshot["machines"][0] = {
     id: 1,
@@ -157,7 +158,7 @@ export async function getMachineStatusSnapshot(): Promise<MachineStatusSnapshot>
     statusKey: e1 || "empty",
     statusLabel: label1,
     detail: latest1
-      ? `${normalizeYyyymmdd(latest1.sdate)} ${(latest1.stime ?? "").trim()}`.trim()
+      ? `${normalizeYyyymmdd(latest1.sdate)} ${trimStr(latest1.stime)}`.trim()
       : undefined,
   };
 

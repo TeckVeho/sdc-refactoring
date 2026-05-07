@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js";
+import { trimStr } from "../lib/trim-str.js";
 
 /** Ex装置 §2.3 / 線源 state codes (SENGNR1.EVENT) */
 const SOURCE_EVENT_LABEL: Record<string, string> = {
@@ -49,16 +50,18 @@ export type Machine1MonitorData = {
 };
 
 function formatYmd(ymd: string | null | undefined): string {
-  if (!ymd || ymd.length < 8) return ymd?.trim() ?? "";
-  const d = ymd.replace(/\D/g, "");
-  if (d.length < 8) return ymd.trim();
+  const y = trimStr(ymd);
+  if (!y || y.length < 8) return y;
+  const d = y.replace(/\D/g, "");
+  if (d.length < 8) return y;
   return `${d.slice(0, 4)}/${d.slice(4, 6)}/${d.slice(6, 8)}`;
 }
 
 function formatHhmmss(t: string | null | undefined): string {
-  if (!t) return "";
-  const d = t.replace(/\D/g, "");
-  if (d.length < 4) return t.trim();
+  const raw = trimStr(t);
+  if (!raw) return "";
+  const d = raw.replace(/\D/g, "");
+  if (d.length < 4) return raw;
   if (d.length >= 6) {
     return `${d.slice(0, 2)}:${d.slice(2, 4)}:${d.slice(4, 6)}`;
   }
@@ -67,7 +70,7 @@ function formatHhmmss(t: string | null | undefined): string {
 
 function parseNum(s: string | null | undefined): number | null {
   if (s == null) return null;
-  const t = s.trim();
+  const t = trimStr(s);
   if (t === "") return null;
   const n = parseFloat(t.replace(/,/g, ""));
   return Number.isFinite(n) ? n : null;
@@ -185,7 +188,7 @@ export async function getMachine1MonitorData(): Promise<Machine1MonitorData> {
     buildKeikakuUnoMap(),
   ]);
 
-  const eventCode = latestSeng?.event?.trim() ?? "";
+  const eventCode = trimStr(latestSeng?.event);
   const sourceState: Machine1MonitorSourceState = {
     label: SOURCE_EVENT_LABEL[eventCode] ?? "不明",
     sdate: latestSeng ? formatYmd(latestSeng.sdate) : undefined,
@@ -209,8 +212,8 @@ export async function getMachine1MonitorData(): Promise<Machine1MonitorData> {
   }> = [];
 
   for (const s of syoukRows) {
-    const uno = s.uno?.trim() ?? "";
-    const stat = s.syostat?.trim() ?? "";
+    const uno = trimStr(s.uno);
+    const stat = trimStr(s.syostat);
     const k = keikaku.get(uno) ?? { shipDate: "", note: "" };
 
     let remaining: string;
@@ -218,7 +221,7 @@ export async function getMachine1MonitorData(): Promise<Machine1MonitorData> {
     if (stat === "2") {
       remaining = "-----";
       eta = "中断中";
-    } else if (sengEvent === "3" && s.syokind?.trim() === "1") {
+    } else if (sengEvent === "3" && trimStr(s.syokind) === "1") {
       remaining = "------";
       eta = "担当者に確認";
     } else {
@@ -229,15 +232,15 @@ export async function getMachine1MonitorData(): Promise<Machine1MonitorData> {
 
     const sortMins = (() => {
       if (stat === "2") return 1e9;
-      if (sengEvent === "3" && s.syokind?.trim() === "1") return 1e9 - 1;
+      if (sengEvent === "3" && trimStr(s.syokind) === "1") return 1e9 - 1;
       const m = remainingMinutesHminusC(s);
       return m ?? 1e9 - 0.5;
     })();
 
     rowsPrelim.push({
       receiptNo: uno,
-      company: s.kainame?.trim() ?? "",
-      dose: s.siteisn?.trim() ?? "",
+      company: trimStr(s.kainame),
+      dose: trimStr(s.siteisn),
       qty: s.syosuu ?? 0,
       position: positionLabel(s.syoichi),
       remaining,

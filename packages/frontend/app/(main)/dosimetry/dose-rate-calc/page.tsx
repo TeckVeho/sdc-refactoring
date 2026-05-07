@@ -74,7 +74,8 @@ export default function DoseRateCalcPage() {
   const runCalc = useCallback(async () => {
     setApiError(null);
     setPending(true);
-    const td = form.targetDoseGy.trim() ? Number.parseFloat(form.targetDoseGy) : undefined;
+    const tdRaw = String(form.targetDoseGy ?? "").trim();
+    const td = tdRaw ? Number.parseFloat(tdRaw) : undefined;
     const body = {
       mode: form.mode,
       potentiometerId: form.potentiometerId,

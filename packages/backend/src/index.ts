@@ -1,3 +1,5 @@
+import "./load-env.js";
+
 import { createApp } from "./app.js";
 
 const parsedPort = Number.parseInt(process.env.PORT ?? "4100", 10);

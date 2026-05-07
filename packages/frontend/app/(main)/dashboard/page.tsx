@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
-import { NAV } from "@/lib/nav-config";
+import { PRIMARY_NAV } from "@/lib/nav-config";
 
 type NoticeResponse = { data: { text: string } };
 
@@ -16,7 +16,7 @@ function DashboardNotice() {
     retry: false,
   });
   if (isError) return null;
-  const text = data?.data.text?.trim() ?? "";
+  const text = String(data?.data?.text ?? "").trim();
   if (!text) return null;
   return (
     <div
@@ -35,25 +35,29 @@ export default function DashboardPage() {
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold text-ink md:text-3xl">SDC 照射管理</h1>
         <p className="max-w-2xl text-ink-muted">
-          Web 版の業務入口です。下のカードを開くと各業務に進みます。常に表示のメニューは左のナビと同じです。
+          Web 版の業務入口です。メインは左の8項目です。各項目内はタブで画面を切り替えます。
         </p>
       </header>
 
       <DashboardNotice />
 
-      <div className="space-y-10">
-        {NAV.map((group) => (
-          <section key={group.title} className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">{group.title}</h2>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {group.items.map((item) => (
-                <Button key={item.href} asChild variant="outline" className="h-auto min-h-[2.75rem] w-full justify-center px-4 py-3 text-center text-sm font-medium whitespace-normal">
-                  <Link href={item.href}>{item.label}</Link>
-                </Button>
-              ))}
-            </div>
-          </section>
-        ))}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {PRIMARY_NAV.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Button
+              key={item.href}
+              asChild
+              variant="outline"
+              className="h-auto min-h-[2.75rem] w-full justify-start gap-3 px-4 py-3 text-left text-sm font-medium whitespace-normal"
+            >
+              <Link href={item.href} className="flex items-start gap-3">
+                <Icon className="mt-0.5 h-4 w-4 shrink-0 text-terracotta" aria-hidden />
+                <span>{item.label}</span>
+              </Link>
+            </Button>
+          );
+        })}
       </div>
     </div>
   );

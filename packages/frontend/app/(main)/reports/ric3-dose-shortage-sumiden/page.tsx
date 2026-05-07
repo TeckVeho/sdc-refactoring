@@ -50,8 +50,8 @@ type PlanRow = {
   kaiName: string;
 };
 
-function parseNum(s: string): number | null {
-  const t = s.trim();
+function parseNum(s: string | number | null | undefined): number | null {
+  const t = String(s ?? "").trim();
   if (t === "") return null;
   const n = Number(t);
   return Number.isFinite(n) ? n : null;

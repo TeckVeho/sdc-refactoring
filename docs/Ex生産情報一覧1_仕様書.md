@@ -1,5 +1,6 @@
 # Ex生産情報一覧1 仕様書
 
+> **対象ファイル**: Ex生産情報一覧1.xlsm
 > **ファイル種別**: .xlsm（マクロ付き）
 > **用途**: 照射装置（1号機・2号機・3号機・EB）の未照射在庫品の生産計画・出荷予定・照射スケジュールを管理し、DBからデータを取得して一覧表示・計画更新・出庫記録を行う総合管理ツール
 > **VBA プロジェクト**: モジュール 56 本（.bas 42 / .cls 7 / .frm 7）
@@ -537,31 +538,42 @@
 
 ### 5.2 ユーザーフォーム上のボタン（サマリ）
 
-| ✓ | フォーム | コントロール | イベント | 呼び出すプロシージャ | 動作概要 |
-|---|---|---|---|---|---|
-| ✓ | **SoutiSenntaku.frm** | comJikkou | Click | `comJikkou_Click()` → `初期化()` | 装置選択・DB読込開始 |
-|   | **SoutiSenntaku.frm** | ComJyoukenn | Click | `ComJyoukenn_Click()` | SyoriSettei.frm を表示 |
-|   | **SoutiSenntaku.frm** | ComSOrtRun | Click | `ComSOrtRun_Click()` → `ソート実行()` | ソート実行 |
-|   | **SoutiSenntaku.frm** | Owari | Click | `Owari_Click()` | フォームを閉じる |
-|   | **SoutiSenntaku.frm** | CommandButton1〜4 | Click | 各装置(1/2/3/EB)を単独選択 | 装置プリセット |
-|   | **SoutiSenntaku.frm** | SubeteHyouji | Click | 全装置チェック ON | 全表示 |
-|   | **SoutiSenntaku.frm** | Ric2Keikaku | Click | 2号機＋計画モード ON | 2号機計画モード |
-|   | **SoutiSenntaku.frm** | Ric3Keikaku | Click | 3号機＋計画モード ON | 3号機出庫モード |
-| ✓ | **SikakuKakuninn.frm** | Kakuninn | Click | `Kakuninn_Click()` → `SikakuCheck()` | 社員ID/PW で資格確認 |
-|   | **SikakuKakuninn.frm** | CommandButton1 | Click | `CommandButton1_Click()` | キャンセル（Unload） |
-| ✓ | **Ric3Stg.frm** | CommandButton2 | Click | `CommandButton2_Click()` | ステージ操作 |
-|   | **Ric3Stg.frm** | 空P挿入 | Click | `空P挿入_Click()` | 空パレット挿入 |
-|   | **TokuSyuDsp.frm** | OKButton | Click | `OKButton_Click()` | ダイアログ閉じる |
-|   | **製品情報.frm** | Modori | Click | `Modori_Click()` | 戻る |
+| ✓ | フォーム | コントロール | キャプション | イベント | 呼び出すプロシージャ | 動作概要 |
+|---|---|---|---|---|---|---|
+| ✓ | **SoutiSenntaku.frm** | comJikkou | 処理方法実行 | Click | `comJikkou_Click()` → `初期化()` | 装置選択・DB読込開始 |
+|   | **SoutiSenntaku.frm** | ComJyoukenn | 条件設定 | Click | `ComJyoukenn_Click()` | SyoriSettei.frm を表示 |
+|   | **SoutiSenntaku.frm** | ComSOrtRun | ソート実行 | Click | `ComSOrtRun_Click()` → `ソート実行()` | ソート実行 |
+|   | **SoutiSenntaku.frm** | Owari | 終了 | Click | `Owari_Click()` | フォームを閉じる |
+|   | **SoutiSenntaku.frm** | CommandButton1〜4 | 1号機/2号機/3号機/EB | Click | 各装置を単独選択 | 装置プリセット |
+|   | **SoutiSenntaku.frm** | SubeteHyouji | 全て表示 | Click | 全装置チェック ON | 全表示 |
+|   | **SoutiSenntaku.frm** | Ric2Keikaku | 2号機計画 | Click | 2号機＋計画モード ON | 2号機計画モード |
+|   | **SoutiSenntaku.frm** | Ric3Keikaku | 3号機出庫 | Click | 3号機＋計画モード ON | 3号機出庫モード |
+| ✓ | **SikakuKakuninn.frm** | Kakuninn | 確認 | Click | `Kakuninn_Click()` → `SikakuCheck()` | 社員ID/PW で資格確認 |
+|   | **SikakuKakuninn.frm** | CommandButton1 | キャンセル | Click | `CommandButton1_Click()` | キャンセル（Unload） |
+| ✓ | **SyoriSettei.frm** | ComKakunin | 資格確認 | Click | `ComKakunin_Click()` | 登録者資格確認（SHAINMST 照合） |
+| ✓ | **SyoriSettei.frm** | ComTouroku | 登録 | Click | `ComTouroku_Click()` | 営業業務資格登録（SHAINMST の `kshika='1'` に UPDATE） |
+| ✓ | **SyoriSettei.frm** | ComSakujyo | 削除 | Click | `ComSakujyo_Click()` | 営業業務資格削除（SHAINMST の `kshika='0'` に UPDATE） |
+| ✓ | **SyoriSettei.frm** | Ric2Set | 2号機設定 | Click | `Ric2Set_Click()` | 2号機パラメータ設定（`ExKanriTB` SIKIBETU=4 を UPDATE） |
+| ✓ | **SyoriSettei.frm** | Ric3Set | 3号機設定 | Click | `Ric3Set_Click()` | 3号機パラメータ設定（`ExKanriTB` SIKIBETU=5 を UPDATE） |
+|   | **SyoriSettei.frm** | Ric2Hyouji | 2号機表示 | Click | `Ric2Hyouji_Click()` | 2号機設定値の DB 読込・表示 |
+|   | **SyoriSettei.frm** | Ric3Hyouji | 3号機表示 | Click | `Ric3Hyouji_Click()` | 3号機設定値の DB 読込・表示 |
+|   | **SyoriSettei.frm** | Ric2NowHyouji | 2号機現在値 | Click | `Ric2NowHyouji_Click()` | 2号機現在値を「設定」シートから表示 |
+|   | **SyoriSettei.frm** | Ric3NowHyouji | 3号機現在値 | Click | `Ric3NowHyouji_Click()` | 3号機現在値を「設定」シートから表示 |
+|   | **SyoriSettei.frm** | CommandButton7 | 戻る | Click | `CommandButton7_Click()` | 閉じる（Unload → SoutiSenntaku.Show） |
+|   | **SyoriSettei.frm** | ComSyoriNouryoku | 処理能力 | Click | `ComSyoriNouryoku_Click()` | 処理能力設定（フォーム再表示） |
+| ✓ | **Ric3Stg.frm** | CommandButton2 | 画面非表示 | Click | `CommandButton2_Click()` | フォーム非表示（`Ric3Stg.Hide`） |
+|   | **Ric3Stg.frm** | 空P挿入 | 空P挿入 | Click | `空P挿入_Click()` | 空パレット挿入 |
+|   | **TokuSyuDsp.frm** | OKButton | OK | Click | `OKButton_Click()` | ダイアログ閉じる |
+|   | **製品情報.frm** | Modori | 閉じる | Click | `Modori_Click()` | 戻る |
 
-### 5.3 CommandBar に動的追加されるボタン（アドイン風）
+### 5.3 CommandBar「未計画一覧メニュー」（動的追加ボタン）
 
 **追加元**: **コマンドサブルーチン.bas** / `AddCmdBarButton()`
 **追加タイミング**: `生産情報開始処理()` 内で呼び出し
 **追加先 CommandBar**: "未計画一覧メニュー"（カスタム作成・Temporary=True）
 **削除タイミング**: Workbook_BeforeClose（CommandBars はTemporary のため自動削除）
 
-| ✓ | Caption | OnAction | FaceId | 動作概要 |
+| ✓ | キャプション | 割り当てマクロ | アイコンID | 動作概要 |
 |---|---|---|---|---|
 | ✓ | 最新データ | `D_UpdatetSort()` | 270 | 製品情報ファイル更新 → 装置選択画面を再表示 |
 | ✓ | データ更新 | `S_Kousinn()` | 271 | 在庫・予約データの DB 更新（→ `更新処理()`） |
@@ -748,81 +760,83 @@
 ### 7.1 SoutiSenntaku.frm（装置選択フォーム）
 
 **目的**: 起動直後に表示。対象装置（1/2/3号機/EB）・表示方法・ソート条件を選択し「処理方法実行」で初期読込を開始する。
+**フォームキャプション**: "装置選択・並べ替え指定"
 
 #### コントロール一覧
 
-| ✓ | コントロール | 種別 | 用途 |
-|---|---|---|---|
-| ✓ | comJikkou | CommandButton | 処理方法実行（メイン起動ボタン） |
-|   | ComJyoukenn | CommandButton | 条件設定（SyoriSettei.frm 表示） |
-|   | ComSOrtRun | CommandButton | ソート実行 |
-|   | Owari | CommandButton | 終了（フォーム閉じ） |
-|   | CommandButton1〜4 | CommandButton | 装置プリセット（1号機/2号機/3号機/EB） |
-|   | CheckBox1〜4 | CheckBox | 装置選択（1号機/2号機/3号機/EB） |
-|   | SubeteHyouji | OptionButton | 全て表示 |
-|   | Misyousya | OptionButton | 未照射品のみ |
-|   | AllZaiko | OptionButton | 在庫全て表示 |
-| ✓ | Ric2Keikaku | OptionButton | 2号機計画モード（→2号機完了予想） |
-| ✓ | Ric3Keikaku | OptionButton | 3号機出庫モード（→3号機完了予想） |
-|   | OptUke〜OptSoku | OptionButton | 特殊条件表示（受付/計画/投入/出荷/測定） |
-|   | ComboBox1/2 | ComboBox | 第1/第2ソート項目選択 |
-|   | OptionButton1〜5 | OptionButton | ソート昇順/降順 |
-|   | TextBoxR1〜R3 | TextBox | 装置稼働状況表示 |
-|   | LaR1Time〜LaR3Time | Label | 装置稼働時間表示 |
-|   | Frame1〜8 | Frame | グループ枠 |
+| ✓ | コントロール | 種別 | キャプション | 用途 |
+|---|---|---|---|---|
+| ✓ | comJikkou | CommandButton | 処理方法実行 | メイン起動ボタン |
+|   | ComJyoukenn | CommandButton | 条件設定 | SyoriSettei.frm 表示 |
+|   | ComSOrtRun | CommandButton | ソート実行 | ソート実行 |
+|   | Owari | CommandButton | 終了 | フォーム閉じ |
+|   | CommandButton1〜4 | CommandButton | 1号機/2号機/3号機/EB | 装置プリセット |
+|   | CheckBox1〜4 | CheckBox | 1号機/2号機/3号機/EB | 装置選択 |
+|   | SubeteHyouji | OptionButton | 全て表示 | 全装置表示 |
+|   | Misyousya | OptionButton | 未照射品のみ | 未照射品フィルタ |
+|   | AllZaiko | OptionButton | 在庫全て表示 | 在庫全表示 |
+| ✓ | Ric2Keikaku | OptionButton | 2号機計画 | 2号機計画モード（→2号機完了予想） |
+| ✓ | Ric3Keikaku | OptionButton | 3号機出庫 | 3号機出庫モード（→3号機完了予想） |
+|   | OptUke〜OptSoku | OptionButton | 受付/計画/投入/出荷/測定 | 特殊条件表示切替 |
+|   | ComboBox1/2 | ComboBox | — | 第1/第2ソート項目選択 |
+|   | OptionButton1〜5 | OptionButton | — | ソート昇順/降順 |
+|   | TextBoxR1〜R3 | TextBox | — | 装置稼働状況表示 |
+|   | LaR1Time〜LaR3Time | Label | — | 装置稼働時間表示 |
+|   | Frame1〜8 | Frame | — | グループ枠 |
 
 ### 7.2 SikakuKakuninn.frm（資格確認フォーム）
 
 **目的**: DB 更新操作前に表示。社員ID/パスワードを入力し、SHAINMST で資格を確認する。
+**フォームキャプション**: "資格確認画面"
 
 #### コントロール一覧
 
-| ✓ | コントロール | 種別 | 用途 |
-|---|---|---|---|
-| ✓ | SyainnNo | TextBox | 社員番号入力 |
-| ✓ | PassWord | TextBox | パスワード入力 |
-| ✓ | Kakuninn | CommandButton | 確認実行（→`SikakuCheck()`） |
-|   | CommandButton1 | CommandButton | キャンセル |
-|   | Syainn | Label | ラベル |
-|   | Label1 | Label | ラベル |
+| ✓ | コントロール | 種別 | キャプション | 用途 |
+|---|---|---|---|---|
+| ✓ | SyainnNo | TextBox | — | 社員番号入力 |
+| ✓ | PassWord | TextBox | — | パスワード入力 |
+| ✓ | Kakuninn | CommandButton | 確認 | 確認実行（→`SikakuCheck()`） |
+|   | CommandButton1 | CommandButton | キャンセル | キャンセル |
+|   | Syainn | Label | — | ラベル |
+|   | Label1 | Label | — | ラベル |
 
 ### 7.3 SyoriSettei.frm（処理条件設定フォーム）
 
 **目的**: 2/3号機のパラメータ設定・業務資格の登録/削除を行う。
-**フォームキャプション**: "ファクター登録・処理"
+**フォームキャプション**: "処理ファクター登録・表示"
 **モードレス表示**: ShowModal=False
 
 #### コントロール一覧
 
-| ✓ | コントロール | 種別 | 親フレーム | 用途 |
-|---|---|---|---|---|
-| ✓ | ComKakunin | CommandButton | FramTouroku | 登録者資格確認（→`SikakuCheck`相当のDB照合） |
-| ✓ | ComTouroku | CommandButton | FramHiTouroku | 営業業務資格登録（SHAINMST の `kshika='1'` に UPDATE） |
-| ✓ | ComSakujyo | CommandButton | FramHiTouroku | 営業業務資格削除（SHAINMST の `kshika='0'` に UPDATE） |
-| ✓ | Ric2Set | CommandButton | — | 2号機パラメータ設定（`ExKanriTB` SIKIBETU=4 を UPDATE） |
-| ✓ | Ric3Set | CommandButton | — | 3号機パラメータ設定（`ExKanriTB` SIKIBETU=5 を UPDATE） |
-|   | Ric2Hyouji | CommandButton | — | 2号機設定値の DB 読込・表示 |
-|   | Ric3Hyouji | CommandButton | — | 3号機設定値の DB 読込・表示 |
-|   | Ric2NowHyouji | CommandButton | — | 2号機現在値を「設定」シートから表示 |
-|   | Ric3NowHyouji | CommandButton | — | 3号機現在値を「設定」シートから表示 |
-|   | CommandButton7 | CommandButton | — | 閉じる（Unload → SoutiSenntaku.Show） |
-|   | ComSyoriNouryoku | CommandButton | — | 処理能力設定（フォーム再表示） |
-|   | TourokuCD | TextBox | FramTouroku | 登録者社員番号入力 |
-|   | TourokuPW | TextBox | FramTouroku | 登録者パスワード入力 |
-|   | HiTouCD | TextBox | FramHiTouroku | 被登録者社員番号入力 |
-|   | Ric2Sokudo | TextBox | — | 2号機速度入力（Change で HP 自動計算） |
-|   | Ric2Nenn / Ric2Tuki / Ric2Hi | TextBox×3 | — | 2号機線源増量 年/月/日 |
-|   | Ric3Sokudo | TextBox | — | 3号機タイマー入力（Change で PP 自動計算） |
-|   | Ric3Nenn / Ric3Tuki / Ric3Hi | TextBox×3 | — | 3号機設定 年/月/日 |
-|   | LaSyName | Label | FramHiTouroku | 被登録者社員名表示 |
-|   | Ric2HPset | Label | — | 2号機 HP 設定値（速度入力で自動算出: `速度×1.4885`） |
-|   | Ric3PPSet | Label | — | 3号機 PP 設定値（タイマー入力で自動算出: `82800/タイマー`） |
-|   | LRic2Sokudo / LRic2Nenn / LRic2Tuki / LRic2Hi / LRic2HP | Label×5 | — | 2号機現在値表示 |
-|   | LRic3Sokudo / LRic3Nenn / LRic3Tuki / LRic3Hi / LRic3PP | Label×5 | — | 3号機現在値表示 |
-|   | Label27〜Label30 | Label×4 | — | 固定ラベル（見出し） |
-|   | FramTouroku | Frame | — | 登録者資格確認グループ |
-|   | FramHiTouroku | Frame | — | 被登録者操作グループ |
-|   | Frame1〜Frame4 | Frame×4 | — | レイアウト用グループ枠 |
+| ✓ | コントロール | 種別 | キャプション | 親フレーム | 用途 |
+|---|---|---|---|---|---|
+| ✓ | ComKakunin | CommandButton | 資格確認 | FramTouroku | 登録者資格確認（→`SikakuCheck`相当のDB照合） |
+| ✓ | ComTouroku | CommandButton | 登録 | FramHiTouroku | 営業業務資格登録（SHAINMST の `kshika='1'` に UPDATE） |
+| ✓ | ComSakujyo | CommandButton | 削除 | FramHiTouroku | 営業業務資格削除（SHAINMST の `kshika='0'` に UPDATE） |
+| ✓ | Ric2Set | CommandButton | 2号機設定 | — | 2号機パラメータ設定（`ExKanriTB` SIKIBETU=4 を UPDATE） |
+| ✓ | Ric3Set | CommandButton | 3号機設定 | — | 3号機パラメータ設定（`ExKanriTB` SIKIBETU=5 を UPDATE） |
+|   | Ric2Hyouji | CommandButton | 2号機表示 | — | 2号機設定値の DB 読込・表示 |
+|   | Ric3Hyouji | CommandButton | 3号機表示 | — | 3号機設定値の DB 読込・表示 |
+|   | Ric2NowHyouji | CommandButton | 2号機現在値 | — | 2号機現在値を「設定」シートから表示 |
+|   | Ric3NowHyouji | CommandButton | 3号機現在値 | — | 3号機現在値を「設定」シートから表示 |
+|   | CommandButton7 | CommandButton | 戻る | — | 閉じる（Unload → SoutiSenntaku.Show） |
+|   | ComSyoriNouryoku | CommandButton | 処理能力 | — | 処理能力設定（フォーム再表示） |
+|   | TourokuCD | TextBox | — | FramTouroku | 登録者社員番号入力 |
+|   | TourokuPW | TextBox | — | FramTouroku | 登録者パスワード入力 |
+|   | HiTouCD | TextBox | — | FramHiTouroku | 被登録者社員番号入力 |
+|   | Ric2Sokudo | TextBox | — | — | 2号機速度入力（Change で HP 自動計算） |
+|   | Ric2Nenn / Ric2Tuki / Ric2Hi | TextBox×3 | — | — | 2号機線源増量 年/月/日 |
+|   | Ric3Sokudo | TextBox | — | — | 3号機タイマー入力（Change で PP 自動計算） |
+|   | Ric3Nenn / Ric3Tuki / Ric3Hi | TextBox×3 | — | — | 3号機設定 年/月/日 |
+|   | LaSyName | Label | （動的表示） | FramHiTouroku | 被登録者社員名表示 |
+|   | Ric2HPset | Label | （動的表示） | — | 2号機 HP 設定値（速度入力で自動算出: `速度×1.4885`） |
+|   | Ric3PPSet | Label | （動的表示） | — | 3号機 PP 設定値（タイマー入力で自動算出: `82800/タイマー`） |
+|   | LRic2Sokudo / LRic2Nenn / LRic2Tuki / LRic2Hi / LRic2HP | Label×5 | （動的表示） | — | 2号機現在値表示 |
+|   | LRic3Sokudo / LRic3Nenn / LRic3Tuki / LRic3Hi / LRic3PP | Label×5 | （動的表示） | — | 3号機現在値表示 |
+|   | Label27〜Label30 | Label×4 | — | — | 固定ラベル（見出し） |
+|   | FramTouroku | Frame | — | — | 登録者資格確認グループ |
+|   | FramHiTouroku | Frame | — | — | 被登録者操作グループ |
+|   | Frame1〜Frame4 | Frame×4 | — | — | レイアウト用グループ枠 |
 
 #### イベント一覧
 
@@ -846,6 +860,8 @@
 ### 7.4 Ric3Stg.frm（3号機ステージフォーム）
 
 **目的**: 3号機の照射室内状況をリアルタイム表示。各ステージの線量計番号・パス数・出庫順を表示する。
+**フォームキャプション**: "照射室内状況"（VBA により動的に "照射室内 dd日 hh時mm分" に更新）
+**モードレス表示**: ShowModal=False
 
 #### コントロール種別サマリ
 
@@ -858,41 +874,50 @@
 
 #### コントロール一覧
 
-| ✓ | コントロール | 種別 | 用途 |
-|---|---|---|---|
-|   | Sv01〜Sv16 | Label×16 | ステージ2 の各スロット（線量計番号表示・背景色で状態を示す） |
-|   | St1Sv01〜St1Sv10 | Label×10 | ステージ1 の各スロット（出庫待ち線量計番号） |
-|   | SPas01〜SPas16 | Label×16 | ステージ2 各スロットのパス数表示 |
-|   | JPas01〜JPas16 | Label×16 | ステージ2 各スロットの受番表示 |
-|   | SvP01〜SvP16 | Label×16 | ステージ2 各スロットの SvP 表示 |
-|   | St1Pas01〜St1Pas10 | Label×10 | ステージ1 各スロットのパス数表示 |
-|   | St1SvP01〜St1SvP10 | Label×10 | ステージ1 各スロットの SvP 表示 |
-|   | Label102, Label103 | Label×2 | ステージ見出し |
-|   | Label138, Label139, Label142〜Label144 | Label×5 | 固定ラベル（説明文） |
-| ✓ | TxPasu | TextBox | 空パレット挿入時のパス数入力 |
-| ✓ | TxSuu | TextBox | 空パレット台数入力 |
-| ✓ | CommandButton2 | CommandButton | 画面非表示（`Ric3Stg.Hide`） |
-| ✓ | 空P挿入 | CommandButton | 空パレット挿入（→ `空パレット挿入()` 呼出し） |
-|   | FrmKaraP | Frame | 空パレット操作グループ枠 |
+| ✓ | コントロール | 種別 | キャプション | 用途 |
+|---|---|---|---|---|
+|   | Sv01〜Sv16 | Label×16 | （動的表示） | ステージ2 の各スロット（線量計番号表示・背景色で状態を示す） |
+|   | St1Sv01〜St1Sv10 | Label×10 | （動的表示） | ステージ1 の各スロット（出庫待ち線量計番号） |
+|   | SPas01〜SPas16 | Label×16 | （動的表示） | ステージ2 各スロットのパス数表示 |
+|   | JPas01〜JPas16 | Label×16 | （動的表示） | ステージ2 各スロットの受番表示 |
+|   | SvP01〜SvP16 | Label×16 | （動的表示） | ステージ2 各スロットの SvP 表示 |
+|   | St1Pas01〜St1Pas10 | Label×10 | （動的表示） | ステージ1 各スロットのパス数表示 |
+|   | St1SvP01〜St1SvP10 | Label×10 | （動的表示） | ステージ1 各スロットの SvP 表示 |
+|   | Label102, Label103 | Label×2 | — | ステージ見出し |
+|   | Label138, Label139, Label142〜Label144 | Label×5 | — | 固定ラベル（説明文） |
+| ✓ | TxPasu | TextBox | — | 空パレット挿入時のパス数入力 |
+| ✓ | TxSuu | TextBox | — | 空パレット台数入力 |
+| ✓ | CommandButton2 | CommandButton | 画面非表示 | フォーム非表示（`Ric3Stg.Hide`） |
+| ✓ | 空P挿入 | CommandButton | 空P挿入 | 空パレット挿入（→ `空パレット挿入()` 呼出し） |
+|   | FrmKaraP | Frame | — | 空パレット操作グループ枠 |
 
 ### 7.5 製品情報.frm（製品情報表示フォーム）
 
 **目的**: 選択した在庫品の製品特殊条件・適否情報を表示する。
+**フォームキャプション**: "在庫・製品・特殊条件情報"
 
 #### コントロール一覧
 
-| コントロール | 種別 | 用途 |
-|---|---|---|
-| TextTokuSyu | TextBox | 特殊条件表示 |
-| TekiMi / HutekiMi | TextBox | 適/不適 未照射 |
-| TekiSu / HutekiSu | TextBox | 適/不適 照射済 |
-| HenSuMi / HenSuSu | TextBox | 変数 未/済 |
-| Modori | CommandButton | 戻るボタン |
+| ✓ | コントロール | 種別 | キャプション | 用途 |
+|---|---|---|---|---|
+|   | TextTokuSyu | TextBox | — | 特殊条件表示 |
+|   | TekiMi / HutekiMi | TextBox | — | 適/不適 未照射 |
+|   | TekiSu / HutekiSu | TextBox | — | 適/不適 照射済 |
+|   | HenSuMi / HenSuSu | TextBox | — | 変数 未/済 |
+|   | Modori | CommandButton | 閉じる | 戻るボタン |
 
-### 7.6 TokuSyuDsp.frm / 7.7 UserForm処理中.frm
+### 7.6 TokuSyuDsp.frm（特殊条件ダイアログ）
 
-- **TokuSyuDsp.frm**: 特殊条件ダイアログ（OKButton のみ）
-- **UserForm処理中.frm**: 処理中メッセージ表示（Label1 のみ。ユーザー操作なし）
+**フォームキャプション**: "計画時の特殊条件"
+
+- OKButton（CommandButton / キャプション: "OK"）のみ
+
+### 7.7 UserForm処理中.frm（処理中表示フォーム）
+
+**フォームキャプション**: "処理中"
+**モードレス表示**: ShowModal=False
+
+- Label1（Label / キャプション: VBA により "処理中" / "計算中" / "更新中" 等に動的設定）のみ。ユーザー操作なし。
 
 ---
 
@@ -912,7 +937,7 @@
 
 | ✓ | テーブル名 | 区分 | 主な用途 | キー列 | 参照/更新列 |
 |---|---|---|---|---|---|
-| ✓ | `zaiko` | 参照 | γ線照射在庫マスタ | `uno` | `kaisyacd`, `misyousu`, `syouso`, `nyukabi`, `siteisn`, `pass` |
+|   | `zaiko` | 参照 | γ線照射在庫マスタ | `uno` | `kaisyacd`, `misyousu`, `syouso`, `nyukabi`, `siteisn`, `pass` |
 | ✓ | `ExKeikakuX` | **参照＋更新** | 生産計画 | `uno` | 更新: `kakunin`, `syukkabi`, `syuhouhou`, `bikou1` |
 | ✓ | `ExYoyakuX` | **参照＋更新** | 予約データ | `yoyakuno` | 更新: 全22カラム（`nyukabi`, `kaisyacd`, `siteisn`, `pass`, `nouki`, `kakunin`, `syukkabi`, `syuhouhou`, `bikou`, `updateid`, `updateday`, `yuukou` 等） |
 | ✓ | `ExR3SYukko` | **更新（DELETE+INSERT）** | 3号機出庫順 | `senkno` + `siteibi` | `syukkojyun`, `senkno`, `siteibi` |
@@ -921,9 +946,9 @@
 |   | `sejofile` | 参照 | 生産条件 | — | `nyukajoken`, `shukajoken` |
 |   | `syouk2` / `syouj2` | 参照 | 処理・照射中 | — | `syoriflg`, `pass` |
 |   | `torak3` / `TORAK` | 参照 | トラッキング | — | `STNO`, `TRKDATA` |
-| ✓ | `ExKanriTB` | 参照 | 装置管理パラメータ | `SIKIBETU` | `RICVM`, `HPPP` |
+| ✓ | `ExKanriTB` | **参照＋更新** | 装置管理パラメータ | `SIKIBETU` | 更新: `RICVM`, `HPPP`（SyoriSettei.frm から SIKIBETU=4/5 を UPDATE） |
 |   | `ExYasumiX` | 参照 | 休日テーブル | — | `kyuujitu1` |
-| ✓ | `SHAINMST` | 参照 | 社員マスタ（資格確認） | `shano` | `shaname`, `shask`, `hshika`, `kshika`, `U3shika` |
+| ✓ | `SHAINMST` | **参照＋更新** | 社員マスタ（資格確認） | `shano` | 参照: `shaname`, `shask`, `hshika`, `U3shika` / 更新: `kshika`（SyoriSettei.frm から登録='1'/削除='0' に UPDATE） |
 |   | `zaikoeb` / `sehmst` | 参照 | EB在庫（2022/09改修） | — | — |
 
 ### 8.3 主要 SQL（γ在庫読込・抜粋）
@@ -938,8 +963,23 @@ ORDER BY z.kaisyacd, z.uno
 
 ### 8.4 外部ファイル連携
 
-- ログファイル: VBA により `Open ... For Output` で書込み・`Kill` で削除（パスは動的生成）
-- お知らせファイル: `\\163.59.144.156\ExRicSys\生産情報一覧お知らせ.txt`（現在は無効機能）
+| ファイル | パス | ファイル名 | 処理 | 備考 |
+|---|---|---|---|---|
+| ログファイル | `C:\ExSys実行\生産情報ロギング\` | `yyyyMMdd.txt`（年月日はVBA内で動的生成） | `Open ... For Append` / `Kill`（古いログ削除） | 更新操作の履歴記録。保守時の問題調査に参照 |
+| お知らせファイル | `\\163.59.144.156\ExRicSys\` | `生産情報一覧お知らせ.txt` | `Open ... For Input` / `For Output` | 現在は無効機能 |
+
+#### ログファイル詳細
+
+- **出力元プロシージャ**: `ロギング記録()` / **更新在庫.bas**
+- **パス生成ロジック**（VBAソースより）:
+  ```
+  myAprSakiPath = "C:\ExSys実行\生産情報ロギング\"
+  myTxtFile = myAprSakiPath & Year(Date) & Right("00" & Month(Date), 2) & Right("00" & Day(Date), 2) & ".txt"
+  ```
+- **出力例**: `C:\ExSys実行\生産情報ロギング\20260610.txt`
+- **記録内容**: 在庫更新、在庫新規、在庫上書、予約番号複数、予約削除 等の操作ログ
+- **削除ロジック**: `古いロギング削除()` で古い .txt ファイルを `Kill` で削除
+- **フォルダ不在時**: `MkDir` で自動作成
 
 ---
 

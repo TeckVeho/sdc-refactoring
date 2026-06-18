@@ -1,9 +1,53 @@
 # Exカレンダー 仕様書
 
 > **ファイル種別**: .xlsm（マクロ付き）
-> **用途**: 指定月から12か月分のカレンダーを表示し、会社休祭日をDBテーブル `ExYasumiX` と連携して管理する
-> **VBA プロジェクトサイズ**: 7モジュール（ThisWorkbook, Sheet1, Ex休み読込, Ex休み更新, SQL_Execution, 終了処理, 初期化）
-> **外部連携ファイル**: なし（DB直接接続）
+> **用途**: 会社休祭日カレンダーの表示・登録・DB更新を行う業務ツール。12ヶ月分のカレンダーを一覧表示し、右クリックで休日指定、ボタン操作でDBへ反映する。
+> **VBA プロジェクト**: モジュール 7 本（.bas 5 / .cls 2 / .frm 0）
+> **外部連携**: DSN=ricdb（ODBC/ADO経由）、DB接続情報 UID=ric / PWD=t6101
+> **解析日**: 2026-06-18（excel-to-md スキルによる自動解析）
+
+---
+
+## 凡例（本仕様書の表記ルール）
+
+本仕様書では、保守時の判別を容易にするため、以下の表記ルールを使用します。
+
+| 種別 | 表記 | 例 |
+|---|---|---|
+| モジュール（.bas / .cls） | **太字** | **Ex休み読込.bas** |
+| プロシージャ / イベント | `コード体()` | `休日読込()` |
+| シート名 | 「」 | 「ｶﾚﾝﾀﾞｰ」 |
+| セル参照 | `コード体` | `$G$1` |
+| 名前付き範囲 | `コード体` | `YasumiTB` |
+| DB テーブル / カラム | `コード体` | `ExYasumiX` / `KYUUJITU1` |
+| ユーザー操作 | （操作名） | （休日登録 Click） |
+| 主要マーク | ✓ | ✓ = 保守時に最初に確認すべき項目 |
+
+### データフロー 場所マーク（9章）
+
+9章のデータフロー（テーブル・ツリー図）では、処理が行われる場所を以下のアイコンで区別します。
+
+| アイコン | 種別 | 意味 |
+|---|---|---|
+| 📊 | シート操作 | ワークシート上のセル書込み・読取り・表示変更 |
+| 🖥️ | 画面操作 | ユーザーフォーム（.frm）の表示・入力・操作 |
+| 🗄️ | DB操作 | DB への SELECT / INSERT / UPDATE / DELETE |
+| 📄 | VBA内部処理 | 変数計算・条件分岐など、画面・シートに直接関与しない処理 |
+
+### ✓（主要マーク）の判定基準
+
+✓ は **保守時に最初に確認すべき項目** を示します。
+判定基準は対象の種類ごとに以下のとおりです。
+
+| 章 | 対象 | ✓ の判定基準 |
+|---|---|---|
+| 1.1 | シート | ユーザーが直接操作する、または VBA が動的に表示/非表示を切り替える |
+| 1.3 / 6.0 | VBA モジュール | ① ユーザー操作の起点 ② DB I/O を含む ③ 他モジュールから呼び出される ④ コード行数上位 25%　のいずれか |
+| 2 | セル / 名前付き範囲 | VBA から `Range()` で代入または参照され、業務ロジックに直結する |
+| 3 | 名前付き範囲 | VBA から `Range()` で代入または参照され、業務ロジックに直結する |
+| 5 | ボタン / コントロール | DB 更新・画面遷移・計算実行など副作用のある操作を起動する |
+| 6.0（全プロシージャ） | プロシージャ | ① ユーザー操作の起点（Click イベント等） ② DB I/O を実行 ③ 他モジュールから呼び出される Public　のいずれか |
+| 8.2 | DB テーブル | INSERT / UPDATE / DELETE の対象（参照のみのテーブルは ✓ なし） |
 
 ---
 
@@ -15,375 +59,450 @@
 4. [数式一覧](#4-数式一覧)
 5. [ボタン・マクロ対応](#5-ボタンマクロ対応)
 6. [VBA モジュール仕様](#6-vba-モジュール仕様)
-7. [DB 接続・外部連携](#7-db-接続外部連携)
-8. [データフロー](#8-データフロー)
-9. [セキュリティ注意事項](#9-セキュリティ注意事項)
+7. [ユーザーフォーム仕様](#7-ユーザーフォーム仕様)
+8. [DB 接続・外部連携](#8-db-接続外部連携)
+9. [データフロー](#9-データフロー)
+10. [セキュリティ注意事項](#10-セキュリティ注意事項)
 
 ---
 
 ## 1. ファイル構成
 
-```
-Exカレンダー.xlsm
-├── シート
-│   └── ｶﾚﾝﾀﾞｰ（12か月カレンダー表示・休日管理）
-└── VBA モジュール
-    ├── ThisWorkbook.cls    （Workbook_Open / Workbook_BeforeClose）
-    ├── Sheet1.cls          （Worksheet_BeforeRightClick / Worksheet_Change）
-    ├── Ex休み読込.bas      （DBから休日データを読み込みシートに貼付け）
-    ├── Ex休み更新.bas      （シートの休日をDBに書き戻し）
-    ├── SQL_Execution.bas   （ADO/ODBC DB接続・SQL実行基盤）
-    ├── 終了処理.bas        （ブック終了処理）
-    └── 初期化.bas          （クリア処理）
-```
+### 1.1 シート一覧
+
+| ✓ | シート名 | 最大行 | 最大列 | 保存時 Visible | VBA による動的切替 |
+|---|---|---|---|---|---|
+| ✓ | 「ｶﾚﾝﾀﾞｰ」 | 372 | 44 (AR) | visible | — |
+
+### 1.2 ユーザーフォーム一覧
+
+ユーザーフォームは存在しない。
+
+### 1.3 VBA モジュール一覧
+
+| ✓ | モジュール | 種別 | プロシージャ数 | 主な役割 |
+|---|---|---|---|---|
+| ✓ | **ThisWorkbook.cls** | .cls | 2 | ブック開閉時の初期化・終了処理 |
+| ✓ | **Sheet1.cls** | .cls | 2 | 右クリックによる休日トグル・セル変更検知 |
+| ✓ | **Ex休み読込.bas** | .bas | 1 | DBから休日データを読み込みシートに反映 |
+| ✓ | **Ex休み更新.bas** | .bas | 2 | シート上の変更をDBに書き戻す（INSERT/UPDATE） |
+| ✓ | **SQL_Execution.bas** | .bas | 6 | ODBC/ADO経由のDB接続・SQL実行共通ライブラリ |
+|   | **終了処理.bas** | .bas | 1 | ブックを閉じる処理 |
+|   | **初期化.bas** | .bas | 1 | 表示日・休日データのクリア |
 
 ---
 
 ## 2. シート詳細
 
-### 2.1 ｶﾚﾝﾀﾞｰ
+### 2.0 シート可視性一覧
 
-**目的**: `HyoujiBi`（G1）に表示月を入力すると、その月を起点に12か月分のカレンダーが横方向に生成される。各日付に対しDBから休祭日フラグを読み込み表示する。右クリックで会社独自の休日を手動追加・削除でき、「休日登録」ボタンでDBに反映する。
+| シート名 | 可視性 |
+|----------|--------|
+| 「ｶﾚﾝﾀﾞｰ」 | 表示（Visible） |
 
-#### カラム構成（3列 × 12か月）
+### 2.1 「ｶﾚﾝﾀﾞｰ」シート
 
-カレンダーは D列から AM列まで、3列1セットで12か月分が横に展開される。
+**レイアウト概要**: 12ヶ月分のカレンダーを横方向に並べた一覧表。各月は3列構成（日付・休日フラグ数式・休日入力セル）。右端にDBから取得した休日マスタデータ格納エリアがある。
 
-| 月番号 | 日付列（Col1）| 休日フラグ列（Col2）| 更新前値列（Col3）|
-|---|---|---|---|
-| 1か月目 | D | E | F |
-| 2か月目 | G | H | I |
-| 3か月目 | J | K | L |
-| 4か月目 | M | N | O |
-| 5か月目 | P | Q | R |
-| 6か月目 | S | T | U |
-| 7か月目 | V | W | X |
-| 8か月目 | Y | Z | AA |
-| 9か月目 | AB | AC | AD |
-| 10か月目 | AE | AF | AG |
-| 11か月目 | AH | AI | AJ |
-| 12か月目 | AK | AL | AM |
+#### ヘッダーエリア（行1〜5）
 
-#### 行構成
+| ✓ | セル範囲 | 内容 | 業務的意味 |
+|---|---------|------|-----------|
+| ✓ | `A1` | （空 / デバッグモードフラグ） | 名前付き範囲 `Debug`。値が入っている場合、右クリック休日指定を無効化 |
+|   | `D1:E1` | "検索開始日"（結合セル） | ラベル表示 |
+| ✓ | `G1:H1` | （日付入力欄・結合セル） | 名前付き範囲 `HyoujiBi`。ユーザーが検索開始年月を入力する起点セル |
+|   | `J1` | "会社休祭日は日付の右側ｾﾙを右ﾙｸﾘｯｸし、休を入れる:取消はもう一度右ﾙｸﾘｯｸ" | 操作説明テキスト |
+|   | `AH1` | "1" | 内部パラメータ |
+|   | `AL1` | "Ex5" | 内部識別子 |
+|   | `AQ2` | （空） | 名前付き範囲 `Honnjitu`。本日日付の格納先（現状VBAでは未使用） |
+|   | `E4`〜`AM4` | VLOOKUP数式 | 各月1日目の休日フラグ判定テンプレート行（行7以降にコピーされる） |
 
-| 行 | 内容 |
-|---|---|
-| 1 | ヘッダー（D1: ラベル「検索開始日」, G1:H1: `HyoujiBi`入力セル, J1: 操作説明, AL1: システムID「Ex5」） |
-| 2 | `Honnjitu`（AQ2: 本日日付） |
-| 3 | （空） |
-| 4 | 休日フラグテンプレート行（VLOOKUPで `YasumiTB` を参照）。`休日読込` でこの行の数式を行7〜37にコピー・値貼付け |
-| 5 | （空） |
-| 6 | 各月の月初日（日付データ: D列=`HyoujiBi`、以降 EDATE で+1か月） |
-| 7 | 各月の1日（INT変換した月初日） |
-| 8〜37 | 各月の2日〜31日（+1日ずつ加算、月をまたいだら空） |
-| 6〜37 | AP列以降 `YasumiTB`: DBから読み込んだ休日テーブル（KYUUJITU1, FLG） |
+#### カレンダー表示エリア（行6〜37）
 
-#### DB読み込み領域
+12ヶ月分を横方向に配置。各月は以下の3列構成で、D列から3列ずつ繰り返す。
 
-| 列 | 行範囲 | 内容 |
-|---|---|---|
-| AP | 6（ヘッダー "No"） | 番号 |
-| AQ | 6〜372 | `KYUUJITU1`（休日日付: Excelシリアル値） |
-| AR | 6〜372 | `FLG`（フラグ文字列。`休` で始まるもの） |
+| 列オフセット | 列（1月目の例） | 内容 |
+|-------------|----------------|------|
+| +0 | D列 | 日付（数式で自動計算） |
+| +1 | E列 | 休日フラグ数式（VLOOKUPでDBデータ参照）→VBAで値貼付け後は "休" or 空 |
+| +2 | F列 | 休日入力セル（右クリックで "休" トグル、DB更新時の比較用） |
+
+| ✓ | 月 | 日付列 | 休日数式列 | 休日入力列 | 行範囲 |
+|---|---|--------|-----------|-----------|--------|
+| ✓ | 1月目 | `D7:D37` | `E7:E37` | `F7:F37` | 行7〜37 |
+| ✓ | 2月目 | `G7:G37` | `H7:H37` | `I7:I37` | 行7〜37 |
+| ✓ | 3月目 | `J7:J37` | `K7:K37` | `L7:L37` | 行7〜37 |
+| ✓ | 4月目 | `M7:M37` | `N7:N37` | `O7:O37` | 行7〜37 |
+| ✓ | 5月目 | `P7:P37` | `Q7:Q37` | `R7:R37` | 行7〜37 |
+| ✓ | 6月目 | `S7:S37` | `T7:T37` | `U7:U37` | 行7〜37 |
+| ✓ | 7月目 | `V7:V37` | `W7:W37` | `X7:X37` | 行7〜37 |
+| ✓ | 8月目 | `Y7:Y37` | `Z7:Z37` | `AA7:AA37` | 行7〜37 |
+| ✓ | 9月目 | `AB7:AB37` | `AC7:AC37` | `AD7:AD37` | 行7〜37 |
+| ✓ | 10月目 | `AE7:AE37` | `AF7:AF37` | `AG7:AG37` | 行7〜37 |
+| ✓ | 11月目 | `AH7:AH37` | `AI7:AI37` | `AJ7:AJ37` | 行7〜37 |
+| ✓ | 12月目 | `AK7:AK37` | `AL7:AL37` | `AM7:AM37` | 行7〜37 |
+
+#### 月ヘッダー行（行6）
+
+| ✓ | セル | 内容 |
+|---|-----|------|
+| ✓ | `D6` | 名前付き範囲 `HyujiS`。1月目の月初日付（数式: `=IF(HyoujiBi="","",HyoujiBi)`） |
+|   | `E6`〜`AL6` | 各月の "休" ラベル（固定値） |
+|   | `G6`〜`AK6` | 各月の月初日付（数式: `=EDATE(前月, 1)`） |
+
+#### DBデータ格納エリア（列AP〜AR、行6〜372）
+
+| ✓ | セル範囲 | 内容 |
+|---|---------|------|
+|   | `AP6:AR6` | ヘッダー行: "No", "KYUUJITU1", "FLG" |
+| ✓ | `AQ7:AR372` | 名前付き範囲 `YasumiTB`。DBから取得した休日マスタデータ（最大366件） |
+|   | `AP7:AP372` | 行番号（1〜366の連番、固定値） |
 
 ---
 
 ## 3. 名前付き範囲一覧
 
-| 名前 | 参照先 | 説明 |
-|---|---|---|
-| `Debug` | ｶﾚﾝﾀﾞｰ!$A$1 | デバッグモード（空=通常動作、非空=右クリック処理をスキップ） |
-| `Honnjitu` | ｶﾚﾝﾀﾞｰ!$AQ$2 | 本日の日付 |
-| `HyoujiBi` | ｶﾚﾝﾀﾞｰ!$G$1 | カレンダー表示開始月入力セル（YYYY/M/1 形式に正規化される） |
-| `HyujiS` | ｶﾚﾝﾀﾞｰ!$D$6 | 検索開始日付（D6 = `HyoujiBi` をコピー: `=IF(HyoujiBi="","",HyoujiBi)`） |
-| `YasumiDay` | E7:F37, H7:I37, K7:L37 ... AM7:AM37（12か月分） | 休日フラグ + 更新前値セル群（変更検出と一括クリア用） |
-| `YasumiTB` | ｶﾚﾝﾀﾞｰ!$AQ$7:$AR$372 | DBから読み込んだ休日テーブル（VLOOKUPのルックアップ範囲） |
+| ✓ | 名前 | 参照先 | 業務的意味 |
+|---|------|--------|-----------|
+|   | `Debug` | `ｶﾚﾝﾀﾞｰ!$A$1` | デバッグモードフラグ。値が入っていると右クリック休日指定を無効化する |
+|   | `Honnjitu` | `ｶﾚﾝﾀﾞｰ!$AQ$2` | 本日日付の格納先（VBAコード上で直接参照されていない） |
+| ✓ | `HyoujiBi` | `ｶﾚﾝﾀﾞｰ!$G$1` | カレンダー表示開始年月。ユーザーが入力する起点セル。変更検知で休日読込を自動実行 |
+| ✓ | `HyujiS` | `ｶﾚﾝﾀﾞｰ!$D$6` | 表示開始日（`HyoujiBi`から数式で算出）。DB検索条件およびカレンダー日付計算の基点 |
+| ✓ | `YasumiDay` | `ｶﾚﾝﾀﾞｰ!$E$7:$F$37,...`（12月分の休日表示列、計24列） | 各月の休日フラグ＋入力セル範囲。VBAで初期化（クリア）される |
+| ✓ | `YasumiTB` | `ｶﾚﾝﾀﾞｰ!$AQ$7:$AR$372` | DB取得データの格納テーブル。VLOOKUPの参照元。`Disp_Sheet()`で書き込まれる |
 
 ---
 
 ## 4. 数式一覧
 
-### ｶﾚﾝﾀﾞｰシート
+### 4.1 「ｶﾚﾝﾀﾞｰ」シート 数式サマリ
 
-すべての数式は3列単位 × 12か月で繰り返されるため、代表パターンを示す。
+| 数式パターン | セル範囲 | 個数 | 用途 |
+|-------------|---------|------|------|
+| 休日フラグVLOOKUP | `E4:AM4`（行4、偶数列系） | 24 | `YasumiTB`から日付をキーに休日フラグを検索し先頭1文字を表示 |
+| 月初日付算出 | `D6`, `G6`〜`AK6` | 13 | `HyoujiBi`起点で`EDATE`により12ヶ月分の月初日を生成 |
+| 月初日整数化 | `D7`, `G7`〜`AK7` | 12 | 月初日付をINT()で整数シリアル値に変換 |
+| 日付連番生成 | `D8:AK37`（日付列） | 348 | 前行の日付+1。月末を超えたら空文字を返す |
 
-#### 行6: 月初日計算
+### 4.2 数式詳細
 
-| セル（代表） | 数式 | 説明 |
-|---|---|---|
-| D6 | `=IF(HyoujiBi="","",HyoujiBi)` | 1か月目の月初日（`HyoujiBi` と同値） |
-| G6 | `=IF(HyujiS="","",EDATE(D6,1))` | 2か月目の月初日（前月+1か月） |
-| J6〜AK6 | `=IF(HyujiS="","",EDATE(<前月>,1))` | 3〜12か月目（同パターン） |
+#### 休日フラグ VLOOKUP（テンプレート行: 行4）
 
-#### 行4: 休日フラグテンプレート（VLOOKUP）
+```
+=IF(ISERROR(VLOOKUP(D4,YasumiTB,2,FALSE)),"",LEFT(VLOOKUP(D4,YasumiTB,2,FALSE),1))
+```
 
-| セル（代表） | 数式 | 説明 |
-|---|---|---|
-| E4, F4 | `=IF(ISERROR(VLOOKUP(D4,YasumiTB,2,FALSE)),"",LEFT(VLOOKUP(D4,YasumiTB,2,FALSE),1))` | D列の日付で `YasumiTB` を検索し、FLGの先頭1文字（「休」等）を取得 |
-| H4, I4〜 | 同パターン（参照列が3列ずつシフト） | — |
+- 対象セル: `E4`, `F4`, `H4`, `I4`, ... `AL4`, `AM4`（各月2セル × 12月 = 24セル）
+- 動作: 日付列の値を `YasumiTB` で検索し、FLGの先頭1文字（"休"）を返す。見つからなければ空文字
+- VBAにより行7〜37にPasteSpecial(数式)→PasteSpecial(値)でコピーされる
 
-この行が `休日読込` で行7〜37に数式→値貼付けされる。
+#### 月初日付算出（行6）
 
-#### 行7: 月初日整数化
+| セル | 数式 |
+|------|------|
+| `D6` | `=IF(HyoujiBi="","",HyoujiBi)` |
+| `G6` | `=IF(HyujiS="","",EDATE(D6,1))` |
+| `J6` | `=IF(HyujiS="","",EDATE(G6,1))` |
+| ... | 以降同パターンで3列ごとに `EDATE(前月,1)` |
+| `AK6` | `=IF(HyujiS="","",EDATE(AH6,1))` |
 
-| セル（代表） | 数式 | 説明 |
-|---|---|---|
-| D7 | `=IF(HyujiS="","",INT(HyujiS))` | 月初日をシリアル整数値に変換 |
-| G7〜AK7 | `=IF(HyujiS="","",INT(<月6セル>))` | 同パターン |
+#### 月初日整数化（行7）
 
-#### 行8〜37: 日付の連続生成
+```
+=IF(HyujiS="","",INT(D6))
+```
+- 月初日付のシリアル値を整数化し、日付セルの起点とする
 
-| セル（代表） | 数式 | 説明 |
-|---|---|---|
-| D8 | `=IF(D7="","",IF(MONTH(D7)=MONTH(D7+1),D7+1,""))` | 前日+1日。翌日が別月なら空（月末処理） |
-| D9〜D37 | 同パターン（D8→D9、D9→D10…） | 最大31日分 |
-| G8〜AK37 | 同パターン | 各月列で繰り返し |
+#### 日付連番生成（行8〜37）
+
+```
+=IF(D7="","",IF(MONTH(D7)=MONTH(D7+1),D7+1,""))
+```
+- 前行が空なら空、前行の日付+1が同月なら+1、月が変わったら空文字
 
 ---
 
 ## 5. ボタン・マクロ対応
 
-| シート | ボタンラベル | 割り当てマクロ | 動作概要 |
-|---|---|---|---|
-| ｶﾚﾝﾀﾞｰ | 休日登録 | `YasumiKousinn` | シートの休日フラグ変更をDBテーブル `ExYasumiX` に書き込む |
-| ｶﾚﾝﾀﾞｰ | 終了 | `Bookを閉じる` | ブックを保存せずに閉じる |
+### 5.1 シート上ボタン
+
+| ✓ | ボタン名 | 呼出マクロ | 動作概要 |
+|---|---------|-----------|---------|
+| ✓ | **休日登録** | `YasumiKousinn()` | シート上で変更された休日データをDBに INSERT/UPDATE する |
+|   | **終了** | `Bookを閉じる()` | 確認なしでブックを閉じる（上書き保存しない） |
+
+### 5.2 フォーム上ボタン
+
+ユーザーフォームは存在しないため該当なし。
 
 ---
 
 ## 6. VBA モジュール仕様
 
-### 6.1 ThisWorkbook.cls
+### 6.0 全プロシージャ一覧
+
+| ✓ | モジュール | プロシージャ | 種別 | 概要 |
+|---|---|---|---|---|
+| ✓ | **ThisWorkbook** | `Workbook_Open()` | Private Sub（自動実行） | ブック起動時の初期処理（→`休日読込()`呼出） |
+|   | **ThisWorkbook** | `Workbook_BeforeClose()` | Private Sub（自動実行） | 保存せずブックを閉じる終了処理 |
+| ✓ | **Sheet1** | `Worksheet_BeforeRightClick()` | Private Sub（イベント） | 右クリックで休日フラグ "休" をトグル |
+| ✓ | **Sheet1** | `Worksheet_Change()` | Private Sub（イベント） | `HyoujiBi` 変更検知→`休日読込()` 呼出 |
+| ✓ | **Ex休み読込** | `休日読込()` | Sub | DB から休日データを取得しシートに反映（`Worksheet_Change()` から呼出） |
+| ✓ | **Ex休み更新** | `YasumiKousinn()` | Sub | シート上の変更を DB に INSERT/UPDATE（「休日登録」ボタンから呼出） |
+|   | **Ex休み更新** | `Eveny()` | Sub | `EnableEvents = True` でイベント処理を再有効化（デバッグ用） |
+| ✓ | **SQL_Execution** | `Open_oraconDB()` | Sub | DSN=ricdb で ODBC/ADO 接続を開く（各 DB 操作から呼出） |
+| ✓ | **SQL_Execution** | `SQL_Exe()` | Sub | 渡された SQL 文を `oraconn.Execute()` で実行する共通処理 |
+| ✓ | **SQL_Execution** | `SQL_INSERT_UPDATE()` | Sub | キー存在チェック後 INSERT or UPDATE を実行（`YasumiKousinn()` から呼出） |
+| ✓ | **SQL_Execution** | `SQL_Delete()` | Sub | DELETE 実行の共通処理（現在のコードからは直接呼出なし） |
+| ✓ | **SQL_Execution** | `Disp_Sheet()` | Sub | SQL 結果を `CopyFromRecordset` でシートに展開（`休日読込()` から呼出） |
+| ✓ | **SQL_Execution** | `Set_Array()` | Sub | SQL 結果を 2 次元配列に格納する汎用処理（現在のコードからは直接呼出なし） |
+|   | **終了処理** | `Bookを閉じる()` | Sub | 確認なしでブックを閉じる（「終了」ボタンから呼出） |
+|   | **初期化** | `クリア()` | Sub | `HyoujiBi` / `YasumiDay` / `YasumiTB` をクリア（Ctrl+E で実行） |
+
+### 6.1 **ThisWorkbook**（.cls）
 
 #### `Workbook_Open()`
+- ウィンドウ最大化
+- 「ｶﾚﾝﾀﾞｰ」シートを選択
+- シート保護を解除→ユーザーインターフェースのみ保護で再設定（VBAからの操作は許可）
+- `YasumiDay`, `YasumiTB` をクリア
+- 表示範囲 `A1:AN37` でズーム合わせ
+- `HyoujiBi` セルを選択
 
-**処理概要**: ブック起動時の初期化。ウィンドウ最大化、シート保護設定、休日データのクリア、ズーム調整を行う。
+#### `Workbook_BeforeClose()`
+- 警告非表示で保存済みフラグを設定（上書き保存せず閉じる）
 
-**処理フロー**:
-1. ウィンドウを最大化
-2. ｶﾚﾝﾀﾞｰシートを選択
-3. シート保護を解除後、再設定（UIのみ許可）
-4. 編集可能セルをアンロックセルのみに制限
-5. `YasumiDay`, `YasumiTB` をクリア
-6. A1:AN37 を選択してウィンドウに合わせてズーム
-7. `HyoujiBi` セルにフォーカス
+### 6.2 **Sheet1**（.cls）
 
-```vba
-Private Sub Workbook_Open()
-    ActiveWindow.WindowState = xlMaximized
-    Worksheets("ｶﾚﾝﾀﾞｰ").Select
-    ActiveSheet.Unprotect
-    ActiveSheet.Protect UserInterfaceOnly:=True
-    ActiveSheet.EnableSelection = xlUnlockedCells
-    Range("YasumiDay") = ""
-    Range("YasumiTB") = ""
-    Range("A1:AN37").Select
-    ActiveWindow.Zoom = True
-    Range("HyoujiBi").Select
-End Sub
-```
+#### `Worksheet_BeforeRightClick()`
+- `Debug` セルに値がある場合は処理をスキップ
+- クリック位置が日付エリア（行7〜37、列5〜38で列番号 mod 3 == 2 のセル）の場合:
+  - 隣の日付列が空（月末を超える日付なし）なら何もしない
+  - "休" が入っていれば空にする（休日取消）
+  - 空であれば "休" を入れる（休日指定）
+- 右クリックメニュー表示をキャンセル
 
-#### `Workbook_BeforeClose(Cancel As Boolean)`
+#### `Worksheet_Change()`
+- `HyoujiBi` セルの変更を検知
+- 空になった場合は `YasumiDay`, `YasumiTB` をクリア
+- 日付が入力された場合は年/月/1 の形式に正規化し、`休日読込()` を呼出
 
-**処理概要**: 保存ダイアログを抑制してブックを閉じる。
-
----
-
-### 6.2 Sheet1.cls
-
-#### `Worksheet_BeforeRightClick(ByVal Target As Range, Cancel As Boolean)`
-
-**処理概要**: カレンダー日付セルの右クリックで休日（「休」）のトグル登録を行う。
-
-**処理フロー**:
-1. `Debug` セルが空でない場合は処理をスキップ
-2. クリック位置が日付表示行（行7〜37）かつ休日フラグ列（列5,8,11...など3の倍数+2列目）かを判定
-3. 左隣の日付セルが空の場合は何もしない（その日が存在しない）
-4. 「休」が既に入力されていれば空に戻す（トグルOFF）
-5. 空であれば「休」を入力（トグルON）
-6. 右クリックメニュー表示をキャンセル（`Cancel = True`）
-
-```vba
-Private Sub Worksheet_BeforeRightClick(ByVal Target As Range, Cancel As Boolean)
-    If Range("Debug") <> "" Then Exit Sub
-    With Target
-        If (.Row > 6 And .Row < 38) And _
-           (.Column > 4 And .Column < 39 And .Column - Int(.Column / 3) * 3 = 2) Then
-            If Worksheets("ｶﾚﾝﾀﾞｰ").Cells(.Row, .Column - 1) = "" Then
-                Worksheets("ｶﾚﾝﾀﾞｰ").Cells(.Row, .Column) = ""
-            Else
-                If Worksheets("ｶﾚﾝﾀﾞｰ").Cells(.Row, .Column) = "休" Then
-                    Worksheets("ｶﾚﾝﾀﾞｰ").Cells(.Row, .Column) = ""
-                Else
-                    Worksheets("ｶﾚﾝﾀﾞｰ").Cells(.Row, .Column) = "休"
-                End If
-            End If
-        End If
-    End With
-    Cancel = True
-End Sub
-```
-
-#### `Worksheet_Change(ByVal Target As Range)`
-
-**処理概要**: `HyoujiBi` セルの変更時に、入力日付を月初日に正規化して `休日読込` を呼び出す。
-
-**処理フロー**:
-1. イベントを無効化
-2. 変更セルが `HyoujiBi` の場合:
-   - 空の場合: `YasumiDay`, `YasumiTB` をクリア
-   - 入力あり: `YYYY/M/1` 形式に正規化後、`休日読込` を呼び出す
-3. イベントを再有効化
-
----
-
-### 6.3 Ex休み読込.bas
+### 6.3 **Ex休み読込**（.bas）
 
 #### `休日読込()`
+1. SQL文を構築: `SELECT KYUUJITU1, flg FROM ExYasumiX WHERE FLG LIKE '休%' AND KYUUJITU1 >= {HyujiS} ORDER BY KYUUJITU1`
+2. `YasumiTB` をクリア
+3. `Disp_Sheet()` でDBデータを `AQ7` 以降に展開
+4. 行4のVLOOKUP数式を行7〜37にコピー（PasteFormulas → PasteValues）
+5. 各月の休日フラグ列（E〜AM列の偶数系）に "休" or 空が値として設定される
 
-**処理概要**: DBから休祭日データを取得し、カレンダーシートに反映する。
-
-**処理フロー**:
-1. `HyujiS`（検索開始日）以降の `FLG LIKE '休%'` の休日レコードをDBから取得
-2. 取得データを `YasumiTB`（AQ7:AR372）に上書き
-3. 自動計算を有効化
-4. テンプレート行4の数式（E4:F4）を行7〜37の各日付列に数式→値の順で貼付け（12か月分）
-5. 画面更新を再開
-
-```sql
-SELECT KYUUJITU1, flg FROM ExYasumiX
-WHERE FLG LIKE '休%' AND KYUUJITU1 >= <HyujiS>
-ORDER BY KYUUJITU1
-```
-
----
-
-### 6.4 Ex休み更新.bas
+### 6.4 **Ex休み更新**（.bas）
 
 #### `YasumiKousinn()`
+1. 確認ダイアログ（「休祭日を更新しますか？」）を表示
+2. 12ヶ月分（列4〜37、3列刻み）をループ:
+   - 各日付行（行7〜空行まで）をチェック
+   - 休日フラグ列（日付+1列目）と比較用列（日付+2列目）が異なる場合 = 変更あり
+   - `SQL_INSERT_UPDATE()` で `ExYasumiX` テーブルに書き込み
+   - 書き込み後、比較用列を更新して変更済みマークとする
+3. 完了メッセージ表示
 
-**処理概要**: シートの休日フラグ（Col2）が前回値（Col3）から変更されている行を検出し、DBテーブル `ExYasumiX` をINSERT/UPDATEする。
+#### `Eveny()`
+- `Application.EnableEvents = True` でイベント処理を再有効化（デバッグ/エラー復旧用）
 
-**処理フロー**:
-1. 更新確認ダイアログ（いいえで中止）
-2. 12か月分のデータ列を走査（Step 3: D, G, J...列）
-3. 各月の日付行（行7〜）を日付セルが空になるまでループ
-4. Col2（休日フラグ）≠ Col3（前回値）の場合:
-   - `kyuujitu1`: 日付シリアル値, `flg`: 休日フラグ, `kousinn`: 更新日時
-   - `SQL_INSERT_UPDATE` で `ExYasumiX` をINSERT/UPDATE
-   - Col3にCol2の値をコピー（比較基準を更新）
-5. 「更新しました」メッセージ表示
+### 6.5 **SQL_Execution**（.bas）
 
----
+#### `Open_oraconDB()`
+- DSN=ricdb, UID=ric, PWD=t6101 で ODBC 接続を開く
+- ADO（`ADODB.Connection`）を使用
 
-### 6.5 SQL_Execution.bas
+#### `SQL_Exe()`
+- 渡されたSQL文を `oraconn.Execute()` で実行
+- エラー発生時は `Debug.Print` で出力し `Stop`
 
-**処理概要**: ADO/ODBC DB接続・SQL実行の共通基盤（他ファイルと同構造）。DSN=ricdb, UID=ric, PWD=t6101 でOracleに接続。
+#### `SQL_INSERT_UPDATE()`
+- テーブル名・キー条件・データ配列を受け取る
+- `SELECT COUNT(*)` でキーの存在を確認
+- 0件 → INSERT文生成、1件以上 → UPDATE文生成
+- トランザクション制御（`BeginTrans` / `CommitTrans`）あり
 
----
+#### `SQL_Delete()`
+- テーブル名と WHERE 句を受け取り DELETE 実行
+- トランザクション制御あり
 
-### 6.6 終了処理.bas
+#### `Disp_Sheet()`
+- SQL実行結果をシートの指定位置に `CopyFromRecordset` で一括展開
+- ヘッダー行の出力有無を `myF` パラメータで制御
+- レコード数・フィールド数を呼び出し元に返す
+
+#### `Set_Array()`
+- SQL実行結果を2次元配列に格納する汎用メソッド
+- 現在のブック内からは直接呼出されていない（他ブックとの共有ライブラリとして存在）
+
+### 6.6 **終了処理**（.bas）
 
 #### `Bookを閉じる()`
+- 開いているブックが1つだけなら `Application.Quit`（Excel終了）
+- 複数ブックが開いていれば `ActiveWorkbook.Close`（当該ブックのみ閉じる）
+- 警告ダイアログ非表示
 
-**処理概要**: ブック数が1の場合はExcelを終了、複数の場合は当ブックのみを閉じる。
-
----
-
-### 6.7 初期化.bas
+### 6.7 **初期化**（.bas）
 
 #### `クリア()`
-
-**処理概要**: `HyoujiBi`, `YasumiDay`, `YasumiTB` を空にしてカレンダーを初期化する。
-
-```vba
-Sub クリア()
-    Range("HyoujiBi") = ""
-    Range("YasumiDay") = ""
-    Range("YasumiTB") = ""
-End Sub
-```
+- ショートカットキー: Ctrl+E
+- `HyoujiBi`, `YasumiDay`, `YasumiTB` をすべて空にしてカレンダーを初期状態に戻す
 
 ---
 
-## 7. DB 接続・外部連携
+## 7. ユーザーフォーム仕様
 
-### ODBC 接続設定
+ユーザーフォームは存在しない。
 
-| DSN 名 | UID | PWD | 用途 |
-|---|---|---|---|
-| `ricdb` | `ric` | `t6101` | 休日テーブルの読み書き |
+---
 
-### 参照テーブル一覧
+## 8. DB接続・外部連携
 
-| テーブル名 | 主な用途 | 主要カラム |
-|---|---|---|
-| `ExYasumiX` | 休祭日マスタ | `KYUUJITU1`（日付: Excelシリアル値）, `FLG`（フラグ: `休` で始まる文字列）, `kousinn`（更新日時） |
+### 8.1 ODBC 接続情報
 
-### 主要 SQL 文
+| 項目 | 値 |
+|------|-----|
+| 接続方式 | ADO（`ADODB.Connection` / `ADODB.Recordset`） |
+| DSN | `ricdb` |
+| UID | `ric` |
+| PWD | `t6101` |
+| 接続文字列 | `DSN=ricdb;UID=ric;PWD=t6101` |
+| カーソル位置 | `adUseClient`（クライアントサイドカーソル） |
+
+### 8.2 テーブル一覧
+
+| ✓ | テーブル名 | 用途 |
+|---|-----------|------|
+| ✓ | `ExYasumiX` | 休祭日マスタ。日付ごとの休日フラグを管理する |
+
+### 8.3 SQL 一覧
+
+#### SELECT（休日読込）
 
 ```sql
--- 休日読み込み（月初以降の全休日取得）
-SELECT KYUUJITU1, flg FROM ExYasumiX
-WHERE FLG LIKE '休%' AND KYUUJITU1 >= <HyujiS>
+SELECT KYUUJITU1, flg
+FROM ExYasumiX
+WHERE FLG LIKE '休%'
+  AND KYUUJITU1 >= {HyujiS のシリアル値}
 ORDER BY KYUUJITU1
+```
+- 呼出元: `休日読込()` → `Disp_Sheet()`
+- 用途: 指定開始日以降の休日レコードを取得し `YasumiTB` エリアに展開
 
--- 休日更新（YasumiKousinn から SQL_INSERT_UPDATE 経由）
--- 存在チェック
-SELECT COUNT(*) FROM ExYasumiX WHERE kyuujitu1=<date_serial>
--- 新規
-INSERT INTO ExYasumiX (kyuujitu1, flg, kousinn) VALUES(<date>, '<flg>', <timestamp>)
--- 更新
-UPDATE ExYasumiX SET flg='<flg>', kousinn=<timestamp> WHERE kyuujitu1=<date_serial>
+#### SELECT COUNT（存在チェック）
+
+```sql
+SELECT COUNT(*) FROM ExYasumiX WHERE kyuujitu1 = {日付シリアル値}
+```
+- 呼出元: `SQL_INSERT_UPDATE()`
+- 用途: INSERT/UPDATE の判定
+
+#### INSERT（休日新規登録）
+
+```sql
+INSERT INTO ExYasumiX (kyuujitu1, flg, kousinn)
+VALUES ({日付シリアル値}, '休', {更新日時シリアル値})
+```
+- 呼出元: `YasumiKousinn()` → `SQL_INSERT_UPDATE()`
+
+#### UPDATE（休日更新）
+
+```sql
+UPDATE ExYasumiX
+SET kyuujitu1 = {日付}, flg = '休', kousinn = {更新日時}
+WHERE kyuujitu1 = {日付}
+```
+- 呼出元: `YasumiKousinn()` → `SQL_INSERT_UPDATE()`
+
+### 8.4 テーブルカラム
+
+#### `ExYasumiX`
+
+| ✓ | カラム名 | 型（推定） | 用途 |
+|---|---------|-----------|------|
+| ✓ | `KYUUJITU1` | 数値（日付シリアル値） | 休日の日付（Excelシリアル値で格納） |
+| ✓ | `flg` | 文字列 | 休日フラグ（"休" で始まる値） |
+| ✓ | `kousinn` | 数値（日時シリアル値） | 最終更新日時 |
+
+### 8.5 外部ファイル連携
+
+外部ファイル連携は存在しない。
+
+---
+
+## 9. データフロー
+
+### 9.1 データフロー テーブル
+
+| ✓ | # | 場所 | 処理内容 | 入力 | 出力 |
+|---|---|------|---------|------|------|
+| ✓ | 1 | 🖥️ | （ユーザーが `HyoujiBi` セルに年月を入力） | キーボード入力 | `HyoujiBi`=`G1` |
+| ✓ | 2 | 📄 | `Worksheet_Change()` が変更を検知し `休日読込()` を呼出 | `HyoujiBi` | 呼出トリガー |
+| ✓ | 3 | 🗄️ | `休日読込()` → `Disp_Sheet()` が SELECT を実行 | SQL（`HyujiS`以降の休日データ） | `ExYasumiX` のレコード |
+| ✓ | 4 | 📊 | DBデータを `YasumiTB`（`AQ7:AR372`）に展開 | Recordset | シートセル |
+| ✓ | 5 | 📊 | VLOOKUP数式を行7〜37にコピー＆値貼付け | `YasumiTB` | `YasumiDay` 範囲（E〜AM列の休日フラグ） |
+| ✓ | 6 | 🖥️ | （ユーザーが日付右隣セルを右クリックして休日指定/取消） | 右クリック操作 | セルに "休" or 空 |
+| ✓ | 7 | 🖥️ | （ユーザーが「休日登録」ボタンをクリック） | ボタン操作 | `YasumiKousinn()` 呼出 |
+| ✓ | 8 | 📄 | `YasumiKousinn()` が変更行を検出（休日フラグ列 vs 比較用列） | 休日フラグ列、比較用列 | 変更データ配列 |
+| ✓ | 9 | 🗄️ | `SQL_INSERT_UPDATE()` で INSERT or UPDATE 実行 | 変更データ | `ExYasumiX` テーブル更新 |
+
+### 9.2 データフロー ツリー図
+
+```
+🖥️ ユーザー操作
+├── (HyoujiBi セルに年月入力)
+│   └── 📄 Worksheet_Change()
+│       └── 📄 休日読込()
+│           ├── 🗄️ SELECT ExYasumiX (KYUUJITU1, flg)
+│           ├── 📊 YasumiTB (AQ7:AR372) にデータ展開
+│           └── 📊 VLOOKUP → YasumiDay 範囲に "休" 値貼付け
+│
+├── (日付右隣セルを右クリック)
+│   └── 📄 Worksheet_BeforeRightClick()
+│       └── 📊 休日フラグセルに "休" or "" をトグル
+│
+├── (「休日登録」ボタンクリック)
+│   └── 📄 YasumiKousinn()
+│       ├── 📊 変更行の検出（12ヶ月分ループ）
+│       ├── 🗄️ SQL_INSERT_UPDATE() → INSERT or UPDATE ExYasumiX
+│       └── 📊 比較用列を更新（変更済みマーク）
+│
+├── (「終了」ボタンクリック)
+│   └── 📄 Bookを閉じる()
+│
+└── (Ctrl+E ショートカット)
+    └── 📄 クリア() → HyoujiBi, YasumiDay, YasumiTB を初期化
 ```
 
 ---
 
-## 8. データフロー
+## 10. セキュリティ注意事項
 
-```
-【起動フロー】
-  Workbook_Open
-       ↓
-  ｶﾚﾝﾀﾞｰシート表示 + 保護設定
-       ↓
-  YasumiDay / YasumiTB クリア
-       ↓
-  ズーム設定 → HyoujiBi にフォーカス
+### olevba 警告一覧
 
-【カレンダー表示フロー】
-  HyoujiBi（G1）に年月入力
-       ↓ Worksheet_Change
-  YYYY/M/1 に正規化
-       ↓
-  休日読込(): DB(ExYasumiX) → YasumiTB（AQ7:AR372）に書き込み
-       ↓
-  行4テンプレート（VLOOKUP数式）を行7〜37に数式→値コピー
-  （12か月分 × E:F列 / H:I列... のペア）
-       ↓
-  各日付セルに「休」または空が設定されたカレンダーが完成
+| 種別 | キーワード | 説明 |
+|------|-----------|------|
+| AutoExec | `Workbook_Open` | ブック起動時に自動実行される |
+| AutoExec | `Workbook_BeforeClose` | ブック終了時に自動実行される |
+| AutoExec | `Worksheet_Change` | セル変更時にイベント駆動で実行される |
+| Suspicious | `Open` | ファイルを開く可能性（→ DB接続の `oraconn.Open` に該当） |
+| Suspicious | `Call` | DLL呼出の可能性（→ VBA内のプロシージャ呼出に該当、実際のDLL呼出ではない） |
+| Suspicious | Hex Strings | 16進エンコード文字列の検出（→ VBAプロジェクト内部データ、悪意ある用途ではない） |
+| Suspicious | Base64 Strings | Base64エンコード文字列の検出（→ VBAプロジェクト内部データ、悪意ある用途ではない） |
 
-【手動休日入力フロー】
-  カレンダー日付セルを右クリック
-       ↓ Worksheet_BeforeRightClick
-  「休」のトグル（ON/OFF）
-       ↓
-  「休日登録」ボタン押下
-       ↓ YasumiKousinn()
-  変更セル（Col2 ≠ Col3）を検出
-       ↓
-  SQL_INSERT_UPDATE: ExYasumiX に更新
+### DB認証情報のハードコーディング
+
+`SQL_Execution.bas` 内の `Open_oraconDB()` にて、接続文字列にDSN名・ユーザーID・パスワードが平文でハードコーディングされている。
+
+```vb
+oraconn.ConnectionString = "DSN=ricdb;UID=ric;PWD=t6101"
 ```
 
----
+### エラーハンドリングの注意点
 
-## 9. セキュリティ注意事項
-
-| 種別 | キーワード | 内容 |
-|---|---|---|
-| AutoExec | `Workbook_Open` | ブックオープン時に自動実行。シート保護設定・DB読み込みを行う |
-| AutoExec | `Workbook_BeforeClose` | ブック終了時に自動実行。保存ダイアログ抑制 |
-| AutoExec | `Worksheet_Change` | 表示月変更時に自動実行。DB接続が発生する |
-| Suspicious | `Open` | ADO接続の `oraconn.Open` が該当 |
-| Suspicious | `Call` | 各サブルーチン呼び出しで使用 |
-| Suspicious | Hex Strings / Base64 Strings | VBAバイナリ内のエンコード。実際のエンコード処理なし |
-| 注意 | DB認証情報 | 接続文字列にUID/PWDをハードコード: `DSN=ricdb;UID=ric;PWD=t6101` |
+- `SQL_Exe()` 内で `On Error Resume Next` を使用しており、SQLエラーが発生しても `Stop` ステートメントで開発者向けデバッグ停止するのみ。本番運用時にデバッグ画面が表示される可能性がある。
+- `SQL_INSERT_UPDATE()` 内で `Set rs = Nothing` の後に `rs.Close` を呼んでおり、Nothing に対するメソッド呼出となるが `On Error Resume Next` で無視されている。

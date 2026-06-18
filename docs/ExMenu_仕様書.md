@@ -1,9 +1,56 @@
 # ExMenu 仕様書
 
 > **ファイル種別**: .xlsm（マクロ付き）
-> **用途**: 照射管理システムの業務アプリケーション起動メニュー。最大30件のExcelアプリを登録・管理し、ボタンクリックで起動する
-> **VBA プロジェクトサイズ**: 10モジュール（ThisWorkbook, Sheet3/Sheet5, メニュー選択実行, 共通変数と開始処理, SQL_Execution, ファイル登録_取込, お知らせメッセージ, Debug用, SikakuKakuninn[UserForm]）
-> **外部連携ファイル**: `ExAprReadPath.txt`（サーバーパス設定）、`ExMenuからのお知らせ.txt`（お知らせ）
+> **用途**: 照射管理システム（ExRicSys）のアプリケーションランチャー。最大30件のExcelマクロファイルをメニュー表示し、選択起動・バージョン管理・ファイル自動更新を行う
+> **VBA プロジェクト**: モジュール 9 本（.bas 5 / .cls 3 / .frm 1）
+> **外部連携**: DSN=ricdb（Oracle/ODBC）、DB接続先 IP: 163.59.144.156
+> **解析日**: 2026-06-18（excel-to-md スキルによる自動解析）
+
+---
+
+## 凡例（本仕様書の表記ルール）
+
+本仕様書では、保守時の判別を容易にするため、以下の表記ルールを使用します。
+
+| 種別 | 表記 | 例 |
+|---|---|---|
+| モジュール（.bas / .cls） | **太字** | **共通変数と開始処理.bas** |
+| ユーザーフォーム（.frm） | **太字** | **SikakuKakuninn.frm** |
+| プロシージャ / イベント | `コード体()` | `初期設定()` |
+| シート名 | 「」 | 「メニュー」 |
+| セル参照 | `コード体` | `$B$2` |
+| 名前付き範囲 | `コード体` | `PGList` |
+| DB テーブル / カラム | `コード体` | `ExSeihinj` / `KAISYACD` |
+| ユーザー操作 | （操作名） | （ﾌｧｲﾙ登録 Click） |
+| 主要マーク | ✓ | ✓ = 保守時に最初に確認すべき項目 |
+
+### データフロー 場所マーク（9章）
+
+9章のデータフロー（テーブル・ツリー図）では、処理が行われる場所を以下のアイコンで区別します。
+
+| アイコン | 種別 | 意味 |
+|---|---|---|
+| 📊 | シート操作 | ワークシート上のセル書込み・読取り・表示変更 |
+| 🖥️ | 画面操作 | ユーザーフォーム（.frm）の表示・入力・操作 |
+| 🗄️ | DB操作 | DB への SELECT / INSERT / UPDATE / DELETE |
+| 📄 | VBA内部処理 | 変数計算・条件分岐など、画面・シートに直接関与しない処理 |
+
+### ✓（主要マーク）の判定基準
+
+✓ は **保守時に最初に確認すべき項目** を示します。
+判定基準は対象の種類ごとに以下のとおりです。
+
+| 章 | 対象 | ✓ の判定基準 |
+|---|---|---|
+| 1.1 | シート | ユーザーが直接操作する、または VBA が動的に表示/非表示を切り替える |
+| 1.2 | ユーザーフォーム | ユーザー入力を受け付ける、または業務フローの起点となる |
+| 1.3 / 6.0 | VBA モジュール | ① ユーザー操作の起点 ② DB I/O を含む ③ 他モジュールから呼び出される ④ コード行数上位 25%　のいずれか |
+| 2 | セル / 名前付き範囲 | VBA から `Range()` で代入または参照され、業務ロジックに直結する |
+| 3 | 名前付き範囲 | VBA から `Range()` で代入または参照され、業務ロジックに直結する |
+| 5 | ボタン / コントロール | DB 更新・画面遷移・計算実行など副作用のある操作を起動する |
+| 6.0（全プロシージャ） | プロシージャ | ① ユーザー操作の起点（Click イベント等） ② DB I/O を実行 ③ 他モジュールから呼び出される Public　のいずれか |
+| 7 | フォームコントロール | ユーザー入力を受け付ける、またはイベントで業務処理を起動する |
+| 8.2 | DB テーブル | INSERT / UPDATE / DELETE の対象（参照のみのテーブルは ✓ なし） |
 
 ---
 
@@ -15,428 +62,399 @@
 4. [数式一覧](#4-数式一覧)
 5. [ボタン・マクロ対応](#5-ボタンマクロ対応)
 6. [VBA モジュール仕様](#6-vba-モジュール仕様)
-7. [DB 接続・外部連携](#7-db-接続外部連携)
-8. [データフロー](#8-データフロー)
-9. [セキュリティ注意事項](#9-セキュリティ注意事項)
+7. [ユーザーフォーム仕様](#7-ユーザーフォーム仕様)
+8. [DB 接続・外部連携](#8-db-接続外部連携)
+9. [データフロー](#9-データフロー)
+10. [セキュリティ注意事項](#10-セキュリティ注意事項)
 
 ---
 
 ## 1. ファイル構成
 
-```
-ExMenu.xlsm
-├── シート
-│   ├── メニュー  （アプリ起動メニュー画面 - ボタン30個）
-│   └── AprList   （登録アプリ一覧・管理テーブル）
-└── VBA モジュール
-    ├── ThisWorkbook.cls        （Workbook_Open / BeforeClose / BeforeSave）
-    ├── Sheet3.cls              （空）
-    ├── Sheet5.cls              （空）
-    ├── 共通変数と開始処理.bas  （Public変数定義・初期設定・MenuGetPath）
-    ├── メニュー選択実行.bas    （選択1〜30・二重起動チェックと起動）
-    ├── SQL_Execution.bas       （ADO/ODBC DB接続・SQL実行基盤）
-    ├── ファイル登録_取込.bas   （メニュー登録Main・メニュー取込・メニュー登録）
-    ├── お知らせメッセージ.bas  （メッセージ・お知らせ関数）
-    ├── Debug用.bas             （AllCls・DellMenu）
-    └── SikakuKakuninn.frm     （資格確認UserForm）
-└── 外部連携ファイル
-    ├── ExAprReadPath.txt       （サーバー元パス・コピー先パスの設定）
-    └── ExMenuからのお知らせ.txt（運用通知テキスト）
-```
+### 1.1 シート一覧
+
+| ✓ | シート名 | 最大行 | 最大列 | 保存時 Visible | VBA による動的切替 |
+|---|---|---|---|---|---|
+| ✓ | 「AprList」 | 38 | 15 (O) | visible | — |
+| ✓ | 「メニュー」 | 24 | 13 (M) | visible | — |
+
+### 1.2 ユーザーフォーム一覧
+
+| ✓ | フォーム名 | コントロール数 | 用途 |
+|---|------------|---------------|------|
+| ✓ | **SikakuKakuninn** | 6 | 資格確認ダイアログ（社員番号・パスワードによる登録権限の認証） |
+
+### 1.3 VBA モジュール一覧
+
+| ✓ | モジュール | 種別 | プロシージャ数 | 主な役割 |
+|---|---|---|---|---|
+| ✓ | **共通変数と開始処理** | .bas | 2 | 初期設定・バージョンチェック・メニュー画面構築 |
+| ✓ | **ファイル登録_取込** | .bas | 5 | DB連携によるメニュー項目の登録・取込・更新 |
+| ✓ | **SQL_Execution** | .bas | 6 | ADODB経由のDB接続・SQL実行共通処理 |
+| ✓ | **メニュー選択実行** | .bas | 31 | メニュー項目選択時のファイル起動処理 |
+| ✓ | **お知らせメッセージ** | .bas | 2 | サーバからのお知らせファイル読込・表示 |
+|   | **Debug用** | .bas | 2 | 開発用メニューリセット・デバッグ機能 |
+| ✓ | **ThisWorkbook** | .cls | 3 | ブック開閉イベント（初期設定呼出・保存制御） |
+|   | **Sheet3** | .cls | 0 | 未使用（空モジュール） |
+|   | **Sheet5** | .cls | 0 | 未使用（空モジュール） |
 
 ---
 
 ## 2. シート詳細
 
-### 2.1 メニュー
+### 2.0 シート可視性一覧
 
-**目的**: 業務アプリ起動のメイン画面。30個のメニューボタン（Menu1〜Menu30）が配置され、クリックするとアプリが起動する。ヘッダー・グリッド・スクロールバー・タブはすべて非表示にして専用メニュー画面として機能する。
+| シート名 | 可視状態 | VBA制御 |
+|----------|----------|---------|
+| 「AprList」 | 表示 | `Worksheets("AprList").Select` で操作 |
+| 「メニュー」 | 表示 | 起動時に自動選択・UI要素非表示化 |
 
-#### レイアウト構造
+### 2.1 「AprList」シート
 
-| セル/オブジェクト | 内容 |
-|---|---|
-| A1 | `Debug`（デバッグ用。空=通常動作） |
-| Menu1〜Menu30 | メニューボタン（Shapeオブジェクト）。`AprList` の登録内容が動的にラベルと OnAction に設定される |
+**レイアウト構造**（38行 × 15列）
 
-ボタンのラベルが `-----` の場合: サーバー未接続PCまたはファイル未登録（クリック不可ではないが起動は失敗する）
+| 領域 | セル範囲 | 内容 |
+|------|----------|------|
+| ヘッダー | `B2` | "ﾌｧｲﾙ一覧"（タイトル） |
+| 登録件数 | `E2:F2` | "登録ﾌｧｲﾙﾝ数" / 件数（数式: `=COUNTA(D4:D33)`） |
+| 列ヘッダー（現在値） | `B3:H3` | ﾒﾆｭｰNo / Path名 / ﾌｧｲﾙ名 / メニュー表示文字 / ｿﾌﾄ / 登録日 / 登録者 |
+| 列ヘッダー（DB値） | `I3:N3` | Path名 / ﾌｧｲﾙ名 / メニュー表示文字 / ｿﾌﾄ / 登録日 / 登録者 |
+| 変更有無 | `O3` | 変更有無（数式で比較） |
+| データ行 | `B4:O33` | 30件分のアプリケーション登録データ |
+| 参考情報 | `B37:D38` | サーバパス参照（照射管理ｼｽﾃﾑｻｰﾊﾞ / ﾌｧｲﾙｻｰﾊﾞ） |
 
----
+**データ行の列構成**（C4:N33 = `PGList` 範囲）
 
-### 2.2 AprList
+| ✓ | 列 | ヘッダー | バイト制限 | 業務的意味 |
+|---|-----|----------|-----------|------------|
+| ✓ | C | Path名 | 50B | アプリケーションの格納フォルダパス |
+| ✓ | D | ﾌｧｲﾙ名 | 50B | 起動対象の.xlsmファイル名 |
+| ✓ | E | メニュー表示文字 | 100B | メニュー画面に表示するアプリ名称 |
+|   | F | ｿﾌﾄ | 20B | ファイル種別 |
+|   | G | 登録/非表示日 | 12B | 登録日または非表示にした日付 |
+|   | H | 登録者 | 20B | 操作者名 |
+| ✓ | I〜N | （DB保存値） | — | DB上の登録値（変更検知用の比較対象） |
+| ✓ | O | 変更有無 | — | 現在値とDB値の一致判定（TRUE/FALSE） |
 
-**目的**: 起動アプリの登録・管理テーブル。DB（ExSEIHINJ）から読み込んだ情報（I〜N列）と管理者が直接編集する情報（C〜H列）を比較し、変更検出を行う。
+**参考情報**（行37-38）
 
-#### レイアウト構造
+| セル | 値 |
+|------|-----|
+| `C37` | 照射管理ｼｽﾃﾑｻｰﾊﾞ |
+| `C38` | `\\163.59.144.156\ExRicSys\` |
+| `D37` | ﾌｧｲﾙｻｰﾊﾞ |
+| `D38` | `\\RNTSVR-FS\Sv_cup\` |
 
-| セル範囲 | 名前付き範囲 | 内容 |
-|---|---|---|
-| B2 | — | ラベル「ﾌｧｲﾙ一覧」 |
-| F2 | `AprSuu` | 登録ファイル数（30） |
-| B3:O3 | — | 列ヘッダー行 |
-| B4:B33 | — | メニューNo（1〜30） |
-| C4:C33 | `PGList`の先頭列 | Path名（アプリの格納フォルダパス）（50B以内） |
-| D4:D33 | — | ファイル名（50B以内） |
-| E4:E33 | — | メニュー表示文字（100B以内） |
-| F4:F33 | — | ソフト種別（20B以内） |
-| G4:G33 | — | 登録/非表示日（12B以内） |
-| H4:H33 | — | 登録者（20B以内） |
-| I4:I33 | — | DB元 Path名（`メニュー取込` で書き込み） |
-| J4:J33 | — | DB元 ファイル名 |
-| K4:K33 | — | DB元 メニュー表示文字 |
-| L4:L33 | — | DB元 ソフト種別 |
-| M4:M33 | — | DB元 登録日 |
-| N4:N33 | — | DB元 登録者 |
-| O4:O33 | — | 変更有無フラグ（True/False。C〜H列がDB値と異なる場合 False） |
+### 2.2 「メニュー」シート
 
-※ AprList シートはデータが文字化けしている場合がある（Shift-JIS⇔UTF-8の混在によるOpenPyXL読み取り問題）
+**レイアウト構造**（24行 × 13列）
+
+| ✓ | 領域 | セル | 内容 |
+|---|------|------|------|
+|   | 現在時刻 | `K1` | `=NOW()` |
+| ✓ | バージョン | `B2` | "V3M" |
+
+メニュー画面は30個の Shape オブジェクト（`Menu1`〜`Menu30`）で構成される。
+起動時に VBA がアプリ名称を動的に設定し、クリック時のマクロリンクを付与する。
+
+**画面表示設定**（VBAで制御）
+
+| 設定項目 | 値 |
+|----------|-----|
+| 行列番号ヘッダー | 非表示 |
+| 水平スクロールバー | 非表示 |
+| 垂直スクロールバー | 非表示 |
+| シートタブ | 非表示 |
+| グリッド線 | 非表示 |
+| ズーム | A1:L17 に合わせて自動調整 |
+| シート保護 | 有効（UserInterfaceOnly + DrawingObjects） |
 
 ---
 
 ## 3. 名前付き範囲一覧
 
-| 名前 | 参照先 | 説明 |
-|---|---|---|
-| `AprSuu` | AprList!$F$2 | 登録可能アプリ数（30） |
-| `Debug` | メニュー!$A$1 | デバッグモードフラグ（空=通常、`*`=非表示モード） |
-| `PGList` | AprList!$C$4:$N$33 | アプリ一覧データ範囲（VBAはRow/Column参照でCell操作） |
+| ✓ | 名前 | 参照先 | 業務的意味 |
+|---|------|--------|------------|
+| ✓ | `AprSuu` | `AprList!$F$2` | 登録済みアプリケーション件数（COUNTA数式の結果セル） |
+| ✓ | `Debug` | `メニュー!$A$1` | デバッグモードフラグ（"*"で保存制限解除、VBAで参照） |
+| ✓ | `PGList` | `AprList!$C$4:$N$33` | アプリ一覧データ領域（30行×12列、VBAの主要読込範囲） |
 
 ---
 
 ## 4. 数式一覧
 
-数式セルなし（すべての計算・表示はVBAで処理）。
+### 4.0 シート別サマリ
+
+| シート名 | 数式セル数 |
+|----------|-----------|
+| 「AprList」 | 31 |
+| 「メニュー」 | 1 |
+
+### 4.1 「AprList」シートの数式
+
+| ✓ | セル | 数式 | 業務的意味 |
+|---|------|------|------------|
+| ✓ | `F2` | `=COUNTA(D4:D33)` | ファイル名が入力されている件数をカウント |
+| ✓ | `O4:O33` | `=IF(C{n}&D{n}&E{n}&F{n}<>I{n}&J{n}&K{n}&L{n},FALSE,TRUE)` | 現在値とDB保存値の変更検知（30行分） |
+|   | `O35` | `=IF(#REF!&#REF!&E35&F35<>I35&J35&K35&L35,FALSE,TRUE)` | 参照エラー（データ範囲外の残骸） |
+
+### 4.2 「メニュー」シートの数式
+
+| ✓ | セル | 数式 | 業務的意味 |
+|---|------|------|------------|
+|   | `K1` | `=NOW()` | 現在日時の表示 |
 
 ---
 
 ## 5. ボタン・マクロ対応
 
-### AprListシート
+### 5.1 シート上ボタン
 
-| シート | ボタンラベル | 割り当てマクロ | 動作概要 |
-|---|---|---|---|
-| AprList | ﾌｧｲﾙ登録 | `メニュー登録Main` | 変更ありの行をDBのExSEIHINJテーブルに登録・更新する |
-| AprList | メニュー画面 | `BackMenu` | メニューシートに戻る |
+| ✓ | シート | ボタンテキスト | 呼出マクロ | 動作内容 |
+|---|--------|--------------|-----------|----------|
+| ✓ | 「AprList」 | ﾌｧｲﾙ登録 | `メニュー登録Main()` | 変更のあるメニュー項目をDBに登録/消去 |
+| ✓ | 「AprList」 | メニュー画面 | `BackMenu()` | メニューシートに画面遷移 |
 
-### メニューシート（動的設定）
+### 5.2 フォーム上ボタン
 
-| シート | ボタン名 | 割り当てマクロ | 動作概要 |
-|---|---|---|---|
-| メニュー | Menu1 | `選択1` | AprListのNo.1のファイルを起動 |
-| メニュー | Menu2〜Menu30 | `選択2`〜`選択30` | 同様（1〜30） |
+| ✓ | フォーム | ボタン名 | イベント | 動作内容 |
+|---|----------|---------|---------|----------|
+| ✓ | **SikakuKakuninn** | Kakuninn | `Kakuninn_Click()` | 社員番号・パスワードでDB認証を実行 |
+|   | **SikakuKakuninn** | CommandButton1 | `CommandButton1_Click()` | フォームを閉じる（キャンセル） |
+
+### 5.3 メニューシート Shapes ボタン
+
+| ✓ | Shape名 | 割当マクロ | 動作内容 |
+|---|---------|-----------|----------|
+| ✓ | Menu1〜Menu30 | `選択1()`〜`選択30()` | 対応するアプリケーションファイルを起動 |
 
 ---
 
 ## 6. VBA モジュール仕様
 
-### 6.1 ThisWorkbook.cls
+### 6.0 全プロシージャ一覧
 
-#### `Workbook_Open()`
+| ✓ | モジュール | プロシージャ | 種別 | 概要 |
+|---|---|---|---|---|
+| ✓ | **ThisWorkbook** | `Workbook_Open()` | Event | `初期設定()` を呼び出す（Excel起動時） |
+|   | **ThisWorkbook** | `Workbook_BeforeClose()` | Event | CommandBar復元・保存状態リセット（ブック閉じ時） |
+|   | **ThisWorkbook** | `Workbook_BeforeSave()` | Event | 保存制限（現在コメントアウト） |
+| ✓ | **共通変数と開始処理** | `初期設定()` | Sub | バージョンチェック→メニュー取込→ファイル同期→メニュー画面構築（`Workbook_Open`・`メニュー登録Main` から呼出） |
+| ✓ | **共通変数と開始処理** | `MenuGetPath()` | Function | ExAprReadPath.txt からパスを読みメニューファイルの更新日時を比較（`初期設定` から呼出） |
+| ✓ | **ファイル登録_取込** | `メニュー登録Main()` | Sub | 変更行を検出しDBへINSERT/UPDATE実行（「ﾌｧｲﾙ登録」ボタンから呼出） |
+| ✓ | **ファイル登録_取込** | `メニュー取込()` | Sub | DBからメニュー項目をSELECTしシートに展開（`初期設定` から呼出） |
+| ✓ | **ファイル登録_取込** | `メニュー登録()` | Sub | 1行分のデータをDBテーブルに登録（`メニュー登録Main` から呼出） |
+|   | **ファイル登録_取込** | `AddSoft()` | Sub | AprListシートのC4セルへ遷移（未使用） |
+| ✓ | **ファイル登録_取込** | `BackMenu()` | Sub | メニューシートに遷移（「メニュー画面」ボタンから呼出） |
+| ✓ | **SQL_Execution** | `Open_oraconDB()` | Sub | ADODB経由でricdb(Oracle)に接続（各SQL関連Subから呼出） |
+| ✓ | **SQL_Execution** | `SQL_Exe()` | Sub | SQL文をExecuteし結果をrsに格納（各SQL関連Subから呼出） |
+| ✓ | **SQL_Execution** | `SQL_INSERT_UPDATE()` | Sub | SELECT→件数判定→INSERT/UPDATE実行（`メニュー登録` から呼出） |
+| ✓ | **SQL_Execution** | `SQL_Delete()` | Sub | DELETE文を実行（外部から利用可能） |
+| ✓ | **SQL_Execution** | `Disp_Sheet()` | Sub | SQL結果をシートに貼り付け（`メニュー取込` から呼出） |
+| ✓ | **SQL_Execution** | `Set_Array()` | Sub | SQL結果を配列に格納（`SyainName` から呼出） |
+| ✓ | **メニュー選択実行** | `選択1()`〜`選択30()` | Sub | `二重起動チェックと起動()` を番号指定で呼出（Menu1〜Menu30 Shapeから呼出） |
+| ✓ | **メニュー選択実行** | `二重起動チェックと起動()` | Sub | 二重起動チェック後にWorkbooks.Openで起動（`選択1〜30` から呼出） |
+| ✓ | **お知らせメッセージ** | `メッセージ()` | Sub | お知らせファイル読込処理を呼び出す（`初期設定` から呼出） |
+| ✓ | **お知らせメッセージ** | `お知らせ()` | Function | サーバ/ローカルのお知らせファイルを比較表示（`メッセージ` から呼出） |
+|   | **Debug用** | `AllCls()` | Sub | メニュー画面のリセット・デバッグ表示切替（手動実行） |
+|   | **Debug用** | `DellMenu()` | Sub | メニューShape文字・リンクをクリア（`AllCls` から呼出） |
+| ✓ | **SikakuKakuninn** | `Kakuninn_Click()` | Event | 社員番号+パスワードでDB認証実行（確認ボタン押下） |
+|   | **SikakuKakuninn** | `CommandButton1_Click()` | Event | フォームを閉じる（キャンセルボタン） |
+|   | **SikakuKakuninn** | `UserForm_Activate()` | Event | 入力欄を初期化（フォーム表示時） |
+|   | **SikakuKakuninn** | `UserForm_QueryClose()` | Event | フォームを閉じる（×ボタン） |
+| ✓ | **SikakuKakuninn** | `SyainName()` | Function | SHAINMSTテーブルで権限確認し社員名を返却（`Kakuninn_Click` から呼出） |
 
-**処理概要**: ブック起動時に `初期設定` を呼び出す。
+### 6.1 共通変数
 
-#### `Workbook_BeforeClose(Cancel As Boolean)`
-
-**処理概要**: 閉じる際にToolbarを元に戻し、数式バーを表示に戻す。
-
-```vba
-Private Sub Workbook_BeforeClose(Cancel As Boolean)
-    With Application
-        .CommandBars("Standard").Visible = True
-        .CommandBars("Formatting").Visible = True
-        .DisplayFormulaBar = True
-    End With
-    ThisWorkbook.Saved = True
-End Sub
-```
-
----
-
-### 6.2 共通変数と開始処理.bas
-
-#### 共通変数
-
-```vba
-Public mpAprD(30, 2)    '(メニューNo, 0=Path/1=ファイル名/2=表示文字)
-Public mpSyaName As String  '社員名（資格確認後に設定）
-```
-
-#### `初期設定()`
-
-**処理概要**: 起動時の全初期化処理。バージョン確認→メニュー取込→ファイル同期→メニュー画面構築→お知らせ表示。
-
-**処理フロー**:
-1. ウィンドウ最大化、AprListシート保護設定
-2. `MenuGetPath` でメニューのバージョン確認（元ファイルと本ファイルの更新日時比較）
-3. バージョン不一致の場合: ユーザーに継続確認（Noの場合ブックを閉じる）
-4. `メニュー取込` でDB（ExSEIHINJ）からAprListシートへデータ読み込み
-5. AprListの各行（最大30件）を確認:
-   - PC名先頭3文字が「RIC」以外かつサーバーパス以外: 表示文字を `-----` に
-   - ファイルが見つからない場合: 表示文字を `-----` に
-   - 元ファイルと本ファイルの更新日時が異なる場合: `FileCopy` でサーバーからローカルにコピー
-6. メニューシートでグリッド・スクロールバー等を非表示
-7. メニューボタン（Menu1〜Menu30）にラベルと OnAction（`選択1`〜`選択30`）を設定
-8. `メッセージ` でお知らせを表示
-
-```vba
-If myPcName <> "RIC" And mpAprD(i, 0) <> "C:\ラジエ工業\ExRicSys\" Then
-    mpAprD(i, 2) = "-----"  '非RICサーバー接続PCでは利用不可表示
-```
-
-#### `MenuGetPath() As Boolean`
-
-**処理概要**: `ExAprReadPath.txt` から元パス・先パスを読み込み、`ExMenu.xlsm` の更新日時を比較してバージョン一致を確認する。
-
-```vba
-Function MenuGetPath() As Boolean
-    Open ThisWorkbook.Path & "\" & "ExAprReadPath.txt" For Input As #myFno
-        Input #myFno, mpAprMotoPath, mpAprSakiPath
-    Close #myFno
-    If FileDateTime(mpAprMotoPath & ThisWorkbook.Name) <> FileDateTime(mpAprSakiPath & ThisWorkbook.Name) Then
-        MenuGetPath = False  'バージョン違い
-    Else
-        MenuGetPath = True
-    End If
-End Function
-```
+| 変数名 | 型 | スコープ | 用途 |
+|--------|-----|---------|------|
+| `mpAprD(30, 2)` | Variant | Public | AprListシートデータの読込バッファ（0:Path, 1:FileName, 2:表示文字） |
+| `mpSyaName` | String | Public | 認証済み社員名（登録操作の実行者名として使用） |
+| `mpErrDes` | String | Public | エラーメッセージ格納用 |
+| `mpDSN` | String | Public | データソース名（未使用、直接指定に変更済み） |
 
 ---
 
-### 6.3 メニュー選択実行.bas
+## 7. ユーザーフォーム仕様
 
-#### `選択1()` 〜 `選択30()`
+### 7.1 **SikakuKakuninn**（資格確認）
 
-**処理概要**: 各メニューボタンから呼び出されるスタブ。番号を引数に `二重起動チェックと起動` を呼ぶ。
+**用途**: メニュー項目の登録・消去操作時に、操作者の権限を確認するダイアログ
 
-#### `二重起動チェックと起動(ByVal myMenuNo)`
+**コントロール一覧**
 
-**処理概要**: 選択されたメニュー番号のファイルが既に開かれていないか確認し、未起動の場合は `Workbooks.Open` で起動する。
+| ✓ | コントロール名 | 種別 | 用途 |
+|---|---------------|------|------|
+|   | Syainn | Label | タイトルラベル |
+|   | Label1 | Label | 補足ラベル |
+| ✓ | SyainnNo | TextBox | 社員番号入力欄 |
+| ✓ | PassWord | TextBox | パスワード入力欄 |
+| ✓ | Kakuninn | CommandButton | 確認ボタン（DB認証を実行） |
+|   | CommandButton1 | CommandButton | キャンセルボタン |
 
-**処理フロー**:
-1. AprListの `PGList` 範囲からファイル名一覧（`mpAprD(*,1)`）を再読み込み
-2. 開いている全ブックに対し、ファイル名が一致するものがあれば「既に開いています」メッセージを表示して該当ブックをアクティブ化して終了
-3. 一致しない場合: `Workbooks.Open ThisWorkbook.Path & "\" & mpAprD(myMenuNo, 1)` でファイルを起動
-4. ファイル未見つかりエラー（1004）はサイレント無視
+**イベント一覧**
 
-```vba
-Workbooks.Open ThisWorkbook.Path & "\" & mpAprD(myMenuNo, 1)
-```
+| イベント | トリガー | 処理内容 |
+|----------|---------|----------|
+| `Kakuninn_Click()` | （確認ボタン押下） | `SyainName()` で SHAINMST を照会、権限なしならエラー表示 |
+| `CommandButton1_Click()` | （キャンセルボタン押下） | フォームをUnload |
+| `UserForm_Activate()` | （フォーム表示） | SyainnNo, PassWord を空文字に初期化 |
+| `UserForm_QueryClose()` | （×ボタン押下） | フォームをUnload |
 
----
-
-### 6.4 SQL_Execution.bas
-
-**処理概要**: ADO/ODBC DB接続・SQL実行の共通基盤（他ファイルと同構造）。
-
-接続文字列はハードコード: `DSN=ricdb;UID=ric;PWD=t6101`
-
----
-
-### 6.5 ファイル登録_取込.bas
-
-#### `メニュー取込()` （呼出元: `初期設定`）
-
-**処理概要**: DBテーブル `ExSeihinj`（KAISYACD>'9000'）からアプリ一覧を取得し、AprListシートのI列〜N列（`PGList`の列+6〜列+11）に書き込む。
-
-```sql
-SELECT TO_NUMBER(SUBSTR(KAISYACD,2)), FOLDER, FILENAME, KAIBIKOU,
-       HIKITORI, TOUDATE, TOUNAME,
-       FOLDER, FILENAME, KAIBIKOU, HIKITORI, TOUDATE, TOUNAME
-FROM ExSeihinj
-WHERE KAISYACD>'9000' ORDER BY KAISYACD
-```
-
-#### `メニュー登録Main()` （呼出元: 「ﾌｧｲﾙ登録」ボタン）
-
-**処理概要**: 変更ありの行を検出してDBに登録・更新する。
-
-**処理フロー**:
-1. 確認ダイアログ（Noで中止）
-2. 社員名が未設定の場合: `SikakuKakuninn`（資格確認UserForm）を表示
-3. AprListの各行を走査（`PGList` 範囲）:
-   - `変更有無`（O列）= True の行はスキップ
-   - Path名またはファイル名が空: メニューから消去確認ダイアログ → Yesなら削除してDB更新
-   - ファイルが存在しない場合: エラーメッセージで中止
-   - 正常: `メニュー登録` でDB更新
-4. 更新件数を表示。更新あれば再起動確認
-
-#### `メニュー登録(myRow)` （呼出元: `メニュー登録Main`）
-
-**処理概要**: 1行分のデータを `SQL_INSERT_UPDATE` で `ExSEIHINJ` テーブルにINSERT/UPDATEする。
-
-| DBカラム | 内容 | 上限 |
-|---|---|---|
-| `KAISYACD` | コード（9001〜9030: メニューNo+9000） | — |
-| `FOLDER` | アプリの格納フォルダパス | 50B |
-| `FILENAME` | ファイル名 | 50B |
-| `KAIBIKOU` | メニュー表示文字 | 100B |
-| `HIKITORI` | ソフト種別 | 20B |
-| `TOUDATE` | 登録日（Excelシリアル整数） | — |
-| `TOUNAME` | 登録者（社員名） | — |
-
-#### `BackMenu()` / `AddSoft()`
-
-**処理概要**: メニューシートへ戻る / AprListのC4にフォーカス移動。
-
----
-
-### 6.6 お知らせメッセージ.bas
-
-#### `メッセージ()`
-
-**処理概要**: `ExAprReadPath.txt` からサーバーパスを読み込み、`お知らせ` 関数を呼ぶ。
-
-#### `お知らせ(myAprMotoPath, myAprSakiPath) As Boolean`
-
-**処理概要**: サーバー元パスの `ExMenuからのお知らせ.txt` と、ローカルコピーを比較し、差異があればメッセージを表示する。
-
-**処理フロー**:
-1. 元ファイルの更新日時が10日以上前の場合: スキップ（`お知らせ = True` で正常終了）
-2. 元ファイルを読み込み（行ごとに配列格納）
-3. ローカルコピーを読み込み
-4. 行数または内容が異なる場合: メッセージを表示し、「次回もお知らせ?」→ Noならローカルコピーを更新して差分を消去
-5. ファイル未存在時: 空ファイルを自動作成して続行
-
----
-
-### 6.7 SikakuKakuninn.frm（UserForm）
-
-**処理概要**: ファイル登録操作に必要な資格（顧客・製品登録資格）を確認する認証フォーム。
-
-| コントロール | 種別 | 動作 |
-|---|---|---|
-| `SyainnNo` | テキストボックス | 社員番号入力 |
-| `PassWord` | テキストボックス | パスワード入力 |
-| `Kakuninn` | コマンドボタン | 「確認」- DB照合して資格チェック |
-| `CommandButton1` | コマンドボタン | 「キャンセル」 |
+**認証ロジック（`SyainName` 関数）**
 
 ```sql
 SELECT TRIM(shaname) FROM SHAINMST
 WHERE shano='<社員番号>' AND shask='<パスワード>'
-AND hshika='1' AND (cshika='2' OR cshika='3')
+  AND hshika='1' AND (cshika='2' OR cshika='3')
 ```
 
-資格条件: `hshika='1'`（有効）かつ `cshika='2'` または `'3'`（顧客または製品登録資格者）
+- `hshika='1'`: 有効な社員
+- `cshika='2' OR cshika='3'`: 顧客登録または製品登録の権限保持者
 
 ---
 
-### 6.8 Debug用.bas
+## 8. DB接続・外部連携
 
-#### `AllCls()` / `DellMenu()`
+### 8.1 ODBC 接続情報
 
-**処理概要**: デバッグ用。メニューボタンのラベルをクリア、OnAction を削除する（開発・テスト時に使用）。
+| 項目 | 値 |
+|------|-----|
+| DSN | `ricdb` |
+| UID | `ric` |
+| PWD | `t6101` |
+| 接続方式 | ADODB.Connection（Microsoft ActiveX Data Objects） |
+| サーバIP | `163.59.144.156` |
+| DB種別 | Oracle（推定：DSN名・SQL構文より） |
+
+### 8.2 テーブル一覧
+
+| ✓ | テーブル名 | 用途 | 操作種別 |
+|---|-----------|------|----------|
+| ✓ | `ExSeihinj` (`ExSEIHINJ`) | メニュー項目マスタ（アプリケーション登録情報） | SELECT / INSERT / UPDATE |
+| ✓ | `SHAINMST` | 社員マスタ（認証・権限確認用） | SELECT |
+
+### 8.3 SQL 一覧
+
+| ✓ | 発行元 | 操作 | SQL概要 |
+|---|--------|------|---------|
+| ✓ | `メニュー取込()` | SELECT | ExSeihinj から KAISYACD>'9000' のレコードをメニュー一覧として取得 |
+| ✓ | `SQL_INSERT_UPDATE()` | SELECT | 対象テーブルのキー件数確認（INSERT/UPDATE判定） |
+| ✓ | `SQL_INSERT_UPDATE()` | INSERT | 新規メニュー項目の登録 |
+| ✓ | `SQL_INSERT_UPDATE()` | UPDATE | 既存メニュー項目の更新 |
+|   | `SQL_Delete()` | DELETE | 指定条件のレコード削除（本ブック内では直接呼出なし） |
+| ✓ | `SyainName()` | SELECT | SHAINMST から社員番号・パスワード・権限で社員名を取得 |
+
+#### ExSeihinj テーブル カラム一覧
+
+| ✓ | カラム名 | 型（推定） | 業務的意味 |
+|---|----------|-----------|------------|
+| ✓ | `KAISYACD` | VARCHAR | 会社コード（メニューでは9001〜9030を使用） |
+| ✓ | `FOLDER` | VARCHAR(50) | アプリケーション格納パス |
+| ✓ | `FILENAME` | VARCHAR(50) | アプリケーションファイル名 |
+| ✓ | `KAIBIKOU` | VARCHAR(100) | メニュー表示文字（備考列を流用） |
+|   | `HIKITORI` | VARCHAR(20) | ファイル種別（ソフト区分） |
+| ✓ | `TOUDATE` | VARCHAR(12) | 登録日 |
+| ✓ | `TOUNAME` | VARCHAR(20) | 登録者名 |
+
+#### SHAINMST テーブル カラム一覧（使用カラムのみ）
+
+| ✓ | カラム名 | 業務的意味 |
+|---|----------|------------|
+| ✓ | `shano` | 社員番号 |
+|   | `shask` | パスワード |
+| ✓ | `shaname` | 社員名 |
+| ✓ | `hshika` | 有効フラグ（'1' = 有効） |
+| ✓ | `cshika` | 権限区分（'2' = 顧客登録, '3' = 製品登録） |
+
+### 8.4 外部ファイル連携
+
+| ✓ | ファイル名 | パス | 用途 |
+|---|-----------|------|------|
+| ✓ | ExAprReadPath.txt | ThisWorkbook.Path | サーバパス(元)とクライアントパス(先)の設定ファイル |
+| ✓ | ExMenuからのお知らせ.txt | サーバ/クライアント両方 | お知らせメッセージの配信ファイル |
+| ✓ | 各.xlsmファイル | `C:\ラジエ工業\ExRicSys\` | メニューから起動される業務アプリケーション群 |
 
 ---
 
-## 7. DB 接続・外部連携
+## 9. データフロー
 
-### ODBC 接続設定
+### 9.1 テーブル形式
 
-| DSN 名 | UID | PWD | 用途 |
-|---|---|---|---|
-| `ricdb` | `ric` | `t6101` | アプリ一覧・社員マスタの読み書き |
+| ✓ | No | 起点 | 処理 | 終点 | 場所マーク |
+|---|-----|------|------|------|-----------|
+| ✓ | 1 | 🗄️ `ExSeihinj` テーブル | `メニュー取込()` でSELECT | 📊「AprList」`PGList`範囲 | 🗄️→📊 |
+| ✓ | 2 | 📊「AprList」`PGList`範囲 | `初期設定()` で `mpAprD()` 配列に読込 | 📄 `mpAprD(30,2)` 配列 | 📊→📄 |
+| ✓ | 3 | 📄 `mpAprD()` 配列 | `初期設定()` でShape文字・リンク設定 | 🖥️「メニュー」Menu1〜30 Shape | 📄→🖥️ |
+| ✓ | 4 | 🖥️ Menu Shape クリック | `二重起動チェックと起動()` | 📄 対象.xlsm を Workbooks.Open | 🖥️→📄 |
+| ✓ | 5 | 📄 サーバ上.xlsm | `初期設定()` で更新日時比較→FileCopy | 📄 ローカル.xlsm | 📄→📄 |
+| ✓ | 6 | 📊「AprList」編集データ | `メニュー登録Main()` で変更検知 | 🗄️ `ExSeihinj` INSERT/UPDATE | 📊→🗄️ |
+| ✓ | 7 | 🖥️ **SikakuKakuninn** 入力 | `SyainName()` でDB照会 | 🗄️ `SHAINMST` SELECT | 🖥️→🗄️ |
+| ✓ | 8 | 📄 ExAprReadPath.txt | `MenuGetPath()` / `メッセージ()` | 📄 パス情報取得 | 📄→📄 |
+| ✓ | 9 | 📄 ExMenuからのお知らせ.txt（サーバ） | `お知らせ()` で比較 | 🖥️ MsgBox表示 | 📄→🖥️ |
 
-### 参照テーブル一覧
+### 9.2 ツリー図
 
-| テーブル名 | 主な用途 | 主要カラム |
-|---|---|---|
-| `ExSeihinj` / `ExSEIHINJ` | アプリ登録一覧 | `KAISYACD`（9001〜9030）, `FOLDER`, `FILENAME`, `KAIBIKOU`（表示名）, `HIKITORI`（種別）, `TOUDATE`, `TOUNAME` |
-| `SHAINMST` | 社員マスタ（資格確認用） | `shano`（社員番号）, `shask`（パスワード）, `hshika`（有効フラグ）, `cshika`（資格種別）, `shaname`（社員名） |
-
-### 外部ファイル連携
-
-| ファイル名 | 格納場所 | 用途 |
-|---|---|---|
-| `ExAprReadPath.txt` | `ThisWorkbook.Path\` | 元サーバーパス・コピー先パスを CSV 形式で格納 |
-| `ExMenuからのお知らせ.txt` | 元サーバーパス / コピー先パス | 運用通知テキスト。更新差分があれば起動時に表示 |
-| 各アプリ（.xlsm等） | `ThisWorkbook.Path\` | 起動対象のアプリファイル（初期設定でサーバーから自動コピー） |
-
-### 主要 SQL 文
-
-```sql
--- アプリ一覧読み込み（メニュー取込）
-SELECT TO_NUMBER(SUBSTR(KAISYACD,2)), FOLDER, FILENAME, KAIBIKOU,
-       HIKITORI, TOUDATE, TOUNAME,
-       FOLDER, FILENAME, KAIBIKOU, HIKITORI, TOUDATE, TOUNAME
-FROM ExSeihinj
-WHERE KAISYACD>'9000' ORDER BY KAISYACD
-
--- アプリ登録（メニュー登録）
-SELECT COUNT(*) FROM ExSEIHINJ WHERE KAISYACD='<9001〜9030>'
-INSERT INTO ExSEIHINJ (KAISYACD, FOLDER, FILENAME, KAIBIKOU, HIKITORI, TOUDATE, TOUNAME)
-  VALUES('<cd>', '<path>', '<file>', '<label>', '<type>', '<date>', '<name>')
-UPDATE ExSEIHINJ SET FOLDER='<path>', ... WHERE KAISYACD='<cd>'
-
--- 資格確認（SikakuKakuninn）
-SELECT TRIM(shaname) FROM SHAINMST
-WHERE shano='<社員番号>' AND shask='<パスワード>'
-AND hshika='1' AND (cshika='2' OR cshika='3')
+```
+📊 Excel起動
+├── 📄 Workbook_Open()
+│   └── 📄 初期設定()
+│       ├── 📄 MenuGetPath() ─── 📄 ExAprReadPath.txt 読込
+│       │   └── 📄 ファイル更新日時比較（バージョンチェック）
+│       ├── 🗄️ メニュー取込() ─── 🗄️ ExSeihinj SELECT
+│       │   └── 📊 AprList シートにデータ展開
+│       ├── 📄 ファイル同期処理
+│       │   ├── 📄 サーバ→ローカル 更新日時比較
+│       │   └── 📄 FileCopy（差分あり時）
+│       ├── 🖥️ メニュー画面構築
+│       │   ├── 🖥️ UI要素非表示化
+│       │   ├── 🖥️ Menu1〜30 Shape にアプリ名設定
+│       │   └── 🖥️ 選択1()〜選択30() マクロリンク付与
+│       └── 📄 メッセージ()
+│           └── 📄 お知らせ() ─── 📄 お知らせテキスト比較・表示
+│
+🖥️ メニュー操作
+├── 🖥️ Menu Shape クリック
+│   └── 📄 二重起動チェックと起動()
+│       ├── 📄 Workbooks 内で二重起動チェック
+│       └── 📄 Workbooks.Open（対象.xlsm起動）
+│
+📊 ファイル登録操作
+├── 📊（ﾌｧｲﾙ登録ボタン押下）
+│   └── 📄 メニュー登録Main()
+│       ├── 🖥️ SikakuKakuninn.Show（未認証時）
+│       │   ├── 🖥️ 社員番号・パスワード入力
+│       │   └── 🗄️ SHAINMST SELECT（権限確認）
+│       ├── 📊 O列 FALSE 行の検出（変更あり）
+│       └── 🗄️ メニュー登録() ─── 🗄️ ExSEIHINJ INSERT/UPDATE
 ```
 
 ---
 
-## 8. データフロー
+## 10. セキュリティ注意事項
 
-```
-【起動フロー】
-  Workbook_Open → 初期設定()
-       ↓
-  MenuGetPath(): ExAprReadPath.txt 読み込み
-       ↓ バージョン確認（ExMenu.xlsmの更新日時比較）
-       ↓
-  メニュー取込(): DB(ExSeihinj) → AprList I〜N列に書き込み
-       ↓
-  AprList C〜H列を走査（各アプリ最大30件）:
-    - 非RICサーバー: 表示文字 = "-----"
-    - ファイル未存在: 表示文字 = "-----"
-    - サーバーとローカルの更新日時が異なる: FileCopy でコピー
-       ↓
-  メニュー画面設定（グリッド/スクロールバー等を非表示）
-       ↓
-  Menu1〜Menu30 に表示文字・OnAction を設定
-       ↓
-  メッセージ(): ExMenuからのお知らせ.txt の差分確認・表示
+### olevba 警告一覧
 
-【アプリ起動フロー】
-  メニューボタン（Menu1〜Menu30）クリック
-       ↓ 選択N()
-  二重起動チェックと起動(N):
-    既に開いていればアクティブ化
-       ↓ 未起動の場合
-  Workbooks.Open ThisWorkbook.Path & "\" & <ファイル名>
+| 種別 | キーワード | 説明 | リスク評価 |
+|------|-----------|------|-----------|
+| AutoExec | `Workbook_Open` | ブック起動時に自動実行 | 低（業務上必要な初期設定） |
+| AutoExec | `Workbook_BeforeClose` | ブック閉じ時に自動実行 | 低（CommandBar復元のみ） |
+| AutoExec | `CommandButton1_Click` | ActiveXオブジェクトのイベント | 低（フォームのキャンセルボタン） |
+| Suspicious | `Open` | ファイルを開く可能性 | 低（テキストファイル読込に使用） |
+| Suspicious | `Write` | ファイルへの書込み | 低（お知らせファイルの同期コピー） |
+| Suspicious | `Output` | ファイルへの出力 | 低（お知らせファイルの書出し） |
+| Suspicious | `FileCopy` | ファイルのコピー | 低（サーバ→ローカルの業務ファイル同期） |
+| Suspicious | `Call` | DLL呼出の可能性 | 低（VBA内部のSub呼出のみ） |
+| Suspicious | `Chr` | 文字列難読化の可能性 | 低（改行 Chr(13) の使用のみ） |
+| Suspicious | Hex Strings | 16進エンコード文字列 | 低（フォームバイナリ由来） |
+| Suspicious | Base64 Strings | Base64エンコード文字列 | 低（フォームバイナリ由来） |
+| IOC | `163.59.144.156` | IPv4アドレス | 注意：照射管理システムサーバのIPアドレス（社内ネットワーク） |
 
-【アプリ登録フロー（AprListシート）】
-  管理者がAprListのC〜H列を直接編集
-       ↓
-  「ﾌｧｲﾙ登録」ボタン → メニュー登録Main()
-       ↓
-  SikakuKakuninn（資格確認UserForm）表示
-       ↓ DB(SHAINMST) で社員番号・パスワード・資格確認
-       ↓
-  変更ありの行を走査
-       ↓
-  メニュー登録(): SQL_INSERT_UPDATE → DB(ExSEIHINJ) に更新
-       ↓
-  更新完了 → 初期設定()を再実行してメニュー再構築
-```
+### セキュリティ上の懸念事項
 
----
-
-## 9. セキュリティ注意事項
-
-| 種別 | キーワード | 内容 |
-|---|---|---|
-| AutoExec | `Workbook_Open` | ブックオープン時に自動実行。DB接続・ファイルコピー・外部ファイル読み込みが発生 |
-| AutoExec | `Workbook_BeforeClose` | ブック終了時にツールバーを元に戻す |
-| AutoExec | `CommandButton1_Click` | UserFormのボタンクリックイベント |
-| Suspicious | `Open` | `ExAprReadPath.txt`・`ExMenuからのお知らせ.txt` の読み書きに使用 |
-| Suspicious | `Write` | `ExMenuからのお知らせ.txt` の更新時に使用（ユーザー操作に基づく） |
-| Suspicious | `Output` | テキストファイル書き込みモードで使用 |
-| Suspicious | `FileCopy` | サーバーからローカルへのアプリ自動コピーに使用 |
-| Suspicious | `Call` | 各サブルーチン呼び出しで使用 |
-| Suspicious | `Chr` | `Chr(13)` による改行文字生成（メッセージ整形） |
-| Suspicious | Hex Strings / Base64 Strings | VBAバイナリ内のエンコード。実際のエンコード処理なし |
-| IOC | `163.59.144.156` | 旧サーバーIPアドレス（コメントアウト済み）。現在は `C:\ラジエ工業\ExRicSys\` を使用 |
-| 注意 | DB認証情報 | 接続文字列にUID/PWDをハードコード: `DSN=ricdb;UID=ric;PWD=t6101` |
-| 注意 | ファイル自動コピー | 起動時にサーバーから最大30ファイルを自動でローカルにコピーする動作あり |
-| 注意 | 社員パスワード | `SHAINMST.shask` カラムにパスワードをSQL直結で照合。ハッシュ化等の対策は不明 |
+| No | 項目 | 内容 |
+|----|------|------|
+| 1 | DB接続情報のハードコード | `SQL_Execution` 内にDSN/UID/PWDが平文で記載 |
+| 2 | パスワードの平文比較 | SHAINMST テーブルの `shask` を平文で照合 |
+| 3 | エラー時の Resume Next | 多くの箇所で On Error Resume Next が使われ、エラーが隠蔽される可能性 |
+| 4 | SQL インジェクション | 文字列結合でSQL組立（パラメータ化されていない） |

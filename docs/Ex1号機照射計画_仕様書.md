@@ -7,6 +7,24 @@
 
 ---
 
+
+> 本仕様書の表記ルール・章構成は [_仕様書共通ルール.md](./_仕様書共通ルール.md) を参照。
+
+## 目次
+
+1. [ファイル構成](#1-ファイル構成)
+2. [シート詳細](#2-シート詳細)
+3. [名前付き範囲](#3-名前付き範囲)
+4. [数式・条件付き書式](#4-数式条件付き書式)
+5. [ボタン・マクロ対応](#5-ボタンマクロ対応)
+6. [VBA モジュール仕様](#6-vba-モジュール仕様)
+7. [ユーザーフォーム仕様](#7-ユーザーフォーム仕様)
+8. [DB接続・外部連携](#8-db接続外部連携)
+9. [データフロー](#9-データフロー)
+10. [セキュリティ・注意事項](#10-セキュリティ注意事項)
+
+---
+
 ## 1. ファイル構成
 
 ### 1.1 シート一覧
@@ -61,6 +79,14 @@
 | 「設定値」 | 表示 | なし |
 | 「使用方法」 | 表示 | なし |
 
+
+### 2.0b 非表示行・列一覧
+
+| シート | 非表示行 | 非表示列 |
+|---|---|---|
+| 「照射計画」 | 3〜18, 21〜22, 73〜84 | B〜F, R |
+| 「未計画品一覧」 | 1, 3, 5 | C〜D |
+
 ### 2.1 「照射計画」シート
 
 **概要**: 最大293列×177行のガントチャート形式。1列＝3時間（1日8列）で約34日分を表示。
@@ -105,7 +131,7 @@
 | `N` | 備考 | 制御文字除去済 |
 | `O` | セット数 | ユーザー入力 |
 | `P` | 照射時間 | ユーザー入力 |
-| `Q` | セット場所 | 南ｺﾝ / 北ｺﾝ / 南固 / 北固 / 特１ / 特2 / 移動 |
+| `Q` | セット場所 | 南コン / 北コン / 南固 / 北固 / 特１ / 特2 / 移動 |
 | `R` | 管理番号 | DB の keikakuno |
 | `S` | 残時間 | VBA が計算 |
 | `T` | 照射状況 | "中" / "中断" / "予定" |
@@ -116,7 +142,7 @@
 
 | 列 | 内容 |
 |----|------|
-| `A73` | "移動照射ﾌﾗｸﾞ"（ラベル） |
+| `A73` | "移動照射フラグ"（ラベル） |
 | `B73` | `=SUM(B23:B72)` — 移動/中断有無の合計 |
 | `V73:KG73` | `=COUNTIF(V23:V72,IdouMoji)` — 各時間帯の移動照射件数 |
 
@@ -125,9 +151,9 @@
 | 行 | 列A | 名前付き範囲 |
 |----|-----|-------------|
 | 77 | 北固 | `SetIti` (`$A$77:$A$84`) |
-| 78 | 北ｺﾝ | |
+| 78 | 北コン | |
 | 79 | 南固 | |
-| 80 | 南ｺﾝ | |
+| 80 | 南コン | |
 | 81 | 移動 | |
 | 82 | 特１ | |
 | 83 | 特2 | |
@@ -196,6 +222,20 @@
 |   | `TeisaiMoto` | `照射計画!$ID$20:$IK$72` | 定彩元データ（予備領域） |
 | ✓ | `TyuudanMoji` | `設定値!$L$4` | "中断" 表示文字 |
 
+
+### 3.1 データの入力規則
+
+| シート | セル | 種別 | 制約 |
+|---|---|---|---|
+| 「照射計画」 | `A1` | 整数 | 1〜9 |
+| 「照射計画」 | `G8:G18` | 整数 | >=INT($V$19) |
+| 「照射計画」 | `Q7:R18 U7:U18` | リスト | リスト: `#REF!` |
+| 「照射計画」 | `Q23 Q25:Q72` | リスト | リスト: `SetIti` |
+| 「照射計画」 | `U23:U72` | テキスト長 | <=30 |
+
+
+---
+
 ---
 
 ## 4. 数式一覧
@@ -222,10 +262,11 @@
 
 ### 5.1 シート上ボタン
 
-#### 「照射計画」シート（vmlDrawing1.vml — 7個）
+#### 「照射計画」シート（vmlDrawing1.vml — 7個 + 描画図形 1個）
 
 | ✓ | # | ボタン表示 | マクロ | 機能 |
 |---|---|-----------|--------|------|
+| ✓ | — | （A2 図形・テキストなし） | `画面クリア()` | シートのデータ領域をクリアして初期状態に戻す |
 | ✓ | 1 | 最新データ | `Ex表示起動()` | DB から最新の照射中・計画データを再読込し画面を再構成 |
 | ✓ | 2 | 計画記録 | `Ex計画記録.Ex計画記録()` | ガントチャート上の計画線を DB に INSERT/UPDATE |
 | ✓ | 3 | 印刷設定 | `Innsatu()` | 印刷日数を入力しプリンタ選択→印刷プレビュー |
@@ -243,6 +284,13 @@
 ### 5.2 フォームボタン
 
 本ファイルにはユーザーフォームが存在しないため該当なし。
+
+### 5.x ショートカットキー
+
+| マクロ名 | ショートカット | 備考 |
+|---|---|---|
+| `画面クリア()` | **Ctrl+\N14** | |
+| `ExAriaCLS()` | **Ctrl+\N14** | |
 
 ### 5.3 CommandBar
 
@@ -285,7 +333,7 @@ VBA コード内に `CommandBar` の定義は存在しない。
 | ✓ | 20 | **Ex最新照射中表示** | `SyousyaIti()` | Function | — | `Ex照射中製品表示` | 照射位置コード→ソート用場所番号の変換 |
 | ✓ | 21 | **Ex計画エリア整え** | `画面クリア()` | Sub | — | デバッグ用 | DebugFlg に応じて行・列の表示/非表示を切替え、`ExAriaCLS()` を呼出 |
 | ✓ | 22 | **Ex計画エリア整え** | `ExAriaCLS()` | Sub | — | `Ex表示起動` / `画面クリア` | `HyoujiAria`, `Misyousya`, `MoterRPM`, `Hakosuu`, `MSGArea` をクリア |
-| ✓ | 23 | **Ex計画エリア整え** | `計画画面整形()` | Sub | — | 多数 | 条件付き書式（南ｺﾝ→薄い赤、北ｺﾝ→薄い黄色、固定→薄い紫）設定、罫線描画、印刷範囲設定、行高さ自動調整 |
+| ✓ | 23 | **Ex計画エリア整え** | `計画画面整形()` | Sub | — | 多数 | 条件付き書式（南コン→薄い赤、北コン→薄い黄色、固定→薄い紫）設定、罫線描画、印刷範囲設定、行高さ自動調整 |
 | ✓ | 24 | **Sheet5** | `Worksheet_BeforeDoubleClick()` | Event | — | ダブルクリック | `計画指定()` を呼出 |
 | ✓ | 25 | **Ex未照射品** | `Ex未照射品表示()` | Sub | R | `Ex表示起動` | `zaiko`, `ExkeikakuX`, `sehmst` を JOIN し未照射品一覧を取得。`ExYoyakuX` から予約データも追加取得 |
 | ✓ | 26 | **Ex未照射品** | `計画指定()` | Sub | — | ボタン「選択」/ ダブルクリック | 未計画品一覧から選択行のデータを「照射計画」シートの予定行に転記 |
@@ -342,16 +390,16 @@ VBA コード内に `CommandBar` の定義は存在しない。
 
 #### SELECT 文
 
-| # | 実行元 | SQL 概要 | テーブル | 主なカラム |
-|---|--------|---------|---------|-----------|
-| 1 | `Ex計画データ表示()` | 計画済み製品情報の取得 | `ExR1Keikaku1` | UNO, KAINAME, SITEISN, NYUKASU, MISYOUSU, NOUKI, SYUKKABI, BIKOU, SETSUU, SYOZI, SYOITI, KEIKAKUNO, ZANJIKANN, SYOUJYO, MENO |
-| 2 | `Ex計画記号表示()` | 計画記号データの取得 | `ExR1Keikaku2` | keiday, keihr, keikaku |
-| 3 | `照射中の中断()` | 中断記録の取得 | `ExR1Keikaku2` | keiday, keihr, keikaku |
-| 4 | `Ex照射中製品表示()` | 照射中製品情報の取得 | `syouk1` JOIN `zaiko` JOIN `ExkeikakuX` JOIN `ExR1Keikaku1` | uno, kainame, siteisn, nyukasu, misyousu, nouki, syukkabi, bikou1, syosuu, syotime, syoichi, slotno, htimer, syokind, syostat, meno |
-| 5 | `Ex照射中製品表示()` | 直近の照射開始イベント取得 | `sengnr1` | event, sdate, stime, timer |
-| 6 | `Ex未照射品表示()` | 未照射在庫一覧の取得 | `zaiko` JOIN `ExkeikakuX` JOIN `sehmst` | uno, kainame, seiname, siteisn, nyukasu, misyousu, nouki, syukkabi, bikou1 |
-| 7 | `Ex未照射品表示()` | 予約データの取得 | `ExYoyakuX` | yoyakuno, uno, kainame, siteisn, nyukasu, nouki, syukkabi, bikou |
-| 8 | `SQL_INSERT_UPDATE()` | レコード存在確認 | 対象テーブル | COUNT(*) |
+| # | 実行元 | SQL 概要 | テーブル | WHERE 条件 | 主なカラム |
+|---|--------|---------|---------|-----------|-----------|
+| 1 | `Ex計画データ表示()` | 計画済み製品情報の取得 | `ExR1Keikaku1` | `keikakuno>1000 AND keieday>={現在日数値} AND kakuninn={有効フラグ} AND kainame IS NOT NULL` | UNO, KAINAME, SITEISN, NYUKASU, MISYOUSU, NOUKI, SYUKKABI, BIKOU, SETSUU, SYOZI, SYOITI, KEIKAKUNO, ZANJIKANN, SYOUJYO, MENO |
+| 2 | `Ex計画記号表示()` | 計画記号データの取得 | `ExR1Keikaku2` | `keikakuno={管理番号}` | keiday, keihr, keikaku |
+| 3 | `照射中の中断()` | 中断記録の取得 | `ExR1Keikaku2` | `yuukou={有効フラグ}` + 管理番号ごとにループ | keiday, keihr, keikaku |
+| 4 | `Ex照射中製品表示()` | 照射中製品情報の取得 | `syouk1 s, zaiko z, ExkeikakuX e, ExR1Keikaku1 k` | `s.uno=z.uno AND s.uno=e.uno(+) AND s.syokind<>{有効フラグ} AND TO_NUMBER(s.slotno)=k.keikakuno(+)` | uno, kainame, siteisn, nyukasu, misyousu, nouki, syukkabi, bikou1, syosuu, syotime, syoichi, slotno, htimer, syokind, syostat, meno |
+| 5 | `Ex照射中製品表示()` | 直近の照射開始イベント取得 | `sengnr1` | `(event='1' OR event='3') AND sdate>='{照射中最古日}' ORDER BY sdate DESC, stime DESC` | event, sdate, stime, timer |
+| 6 | `Ex未照射品表示()` | 未照射在庫一覧の取得 | `zaiko z, ExkeikakuX e, sehmst s` | `z.uno=e.uno(+) AND z.misyousu*1>0 AND z.syouso='1' AND z.kaisyacd=s.kaisyacd AND z.sehncd=s.sehncd` | uno, kainame, seiname, siteisn, nyukasu, misyousu, nouki, syukkabi, bikou1 |
+| 7 | `Ex未照射品表示()` | 予約データの取得 | `ExYoyakuX` | `souti='1' AND yuukou='1'` | yoyakuno, uno, kainame, siteisn, nyukasu, nouki, syukkabi, bikou |
+| 8 | `SQL_INSERT_UPDATE()` | レコード存在確認 | 対象テーブル | `{動的キー条件}` | COUNT(*) |
 
 #### INSERT / UPDATE 文
 

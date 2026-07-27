@@ -1,7 +1,7 @@
 # ExDBファイル表示 仕様書
 
 > **ファイル種別**: .xlsm（マクロ付き）
-> **用途**: Oracle DB の任意のテーブルをユーザーが選択・条件設定してデータを抽出・表示する汎用DBブラウザツール。テーブル定義は Access DB（`テーブル一覧.accdb`）で管理する
+> **用途**: Oracle DB の任意のテーブルをユーザーが選択・条件設定してデータを抽出・表示する汎用DBブラウザツール（EXメニューの1ファイルとして照射管理システムを補完）。テーブル定義は Access DB（`テーブル一覧.accdb`）で管理する
 > **VBA プロジェクトサイズ**: 約11.3MB（抽出結果シートに最大30,000行×140列のデータを保持）
 > **外部連携**:
 > - Oracle DB（ODBC `DSN=ricdb`）：各業務テーブルのデータ抽出
@@ -13,6 +13,15 @@
 ## 凡例（本仕様書の表記ルール）
 
 本仕様書では、保守時の判別を容易にするため、以下の表記ルールを使用します。
+
+### 用語規約
+
+| 用語 | 意味 |
+|---|---|
+| EXメニュー | ExRicSys フォルダに配置される VBA ファイル群（Ex*.xlsm）の総称 |
+| `ExRicSys` | 配置フォルダ名。初出時は〈EXメニュー配置フォルダ〉と注記 |
+
+### 表記規則
 
 | 種別 | 表記 | 例 |
 |---|---|---|
@@ -348,9 +357,49 @@
 **右クリック操作（Sheet1.cls）**:
 - B列（表示欄）: 空→「する」/「する」→空の切替
 
+### 5.2 ショートカットキー
+
+| マクロ名 | ショートカット | 処理概要 |
+|---|---|---|
+| `AllCls()` | **Ctrl+E** | 抽出結果・抽出設定・Table登録シートを全クリアし初期状態に戻す |
+| `シートデータコピー()` | **Ctrl+B** | アクティブシートのデータを「Table登録」シートにコピー（通常は `Exit Sub` で無効化） |
+
 ---
 
 ## 6. VBA モジュール仕様
+
+### 6.0 全プロシージャ一覧
+
+| ✓ | # | モジュール | プロシージャ | 種別 | 概要 |
+|---|---|---|---|---|---|
+| ✓ | 1 | **ThisWorkbook** | `Workbook_Open()` | Event | ブック起動時にシート保護・画面クリア・テーブル一覧表示 |
+| ✓ | 2 | **ThisWorkbook** | `Workbook_BeforeClose()` | Event | 保存ダイアログ抑止 |
+| ✓ | 3 | **テーブル選択** | `テーブル指定()` | Sub | 選択行のテーブルを指定し項目一覧を表示 |
+| ✓ | 4 | **テーブル選択** | `項目名表示()` | Sub | Access DBから項目一覧を取得して表示 |
+| ✓ | 5 | **抽出設定** | `データ抽出()` | Sub | Oracle DBに動的SQLを発行し結果をシートに表示 |
+|   | 6 | **抽出設定** | `新しいBookに記録()` | Sub | 抽出結果を新規ブックにコピー |
+|   | 7 | **抽出設定** | `全て表示_非表示()` | Sub | 全項目の表示/非表示を一括切替 |
+| ✓ | 8 | **テーブル一覧** | `テーブル一覧表示()` | Sub | Access DBからテーブル一覧を取得して表示 |
+| ✓ | 9 | **テーブル一覧** | `テーブル一覧修正登録()` | Sub | テーブル定義をTable登録シートに読込 |
+| ✓ | 10 | **テーブル一覧** | `テーブル登録()` | Sub | Table登録シートの内容をAccess DBに登録 |
+| ✓ | 11 | **SQL_Execution** | `Open_oraconDB()` | Sub | Oracle DB接続（ODBC） |
+| ✓ | 12 | **SQL_Execution** | `SQL_Exe()` | Sub | SQL実行 |
+| ✓ | 13 | **SQL_Execution** | `SQL_INSERT_UPDATE()` | Sub | INSERT/UPDATE汎用処理 |
+| ✓ | 14 | **SQL_Execution** | `SQL_Delete()` | Sub | DELETE汎用処理 |
+| ✓ | 15 | **SQL_Execution** | `Disp_Sheet()` | Sub | SQL結果をシートに出力 |
+| ✓ | 16 | **SQL_Execution** | `Set_Array()` | Sub | SQL結果を配列に格納 |
+| ✓ | 17 | **SQL_AccessExe** | `Open_AccessDB()` | Sub | Access DB接続（OLE DB） |
+| ✓ | 18 | **SQL_AccessExe** | `SQL_Access_Exe()` | Sub | Access SQL実行 |
+| ✓ | 19 | **SQL_AccessExe** | `SQL_Access_INSERT_UPDATE()` | Sub | Access INSERT/UPDATE |
+| ✓ | 20 | **SQL_AccessExe** | `SQL_Access_DELETE()` | Sub | Access DELETE |
+| ✓ | 21 | **SQL_AccessExe** | `Disp_Access_Sheet()` | Sub | Access結果をシートに出力 |
+| ✓ | 22 | **SQL_AccessExe** | `Set_Access_Array()` | Sub | Access結果を配列に格納 |
+|   | 23 | **SQL_AccessExe** | `Set_Access_Close()` | Sub | Access接続クローズ |
+|   | 24 | **シートの保護** | `シート保護()` | Sub | 各シートに保護を設定 |
+| ✓ | 25 | **画面クリア** | `AllCls()` | Sub | 全画面クリア（ショートカット Ctrl+E） |
+|   | 26 | **ユーティリティ** | `一覧登録()` | Sub | 項目TBシートをAccess DBに一括登録 |
+|   | 27 | **ユーティリティ** | `シートデータコピー()` | Sub | アクティブシートをTable登録にコピー（通常無効化） |
+|   | 28 | **Sheet1** | `Worksheet_BeforeRightClick()` | Event | B列の表示/非表示トグル |
 
 ### 6.1 ThisWorkbook
 
@@ -479,7 +528,7 @@ INSERT INTO 項目一覧 (テーブルNo, 表示順, 項目名称, 識別子, �
 
 **接続文字列**: `mpDSN = "DSN=ricdb;UID=" & Range("DBName") & ";PWD=t6101"`
 
-> 注意: UID は `DBName` セルの値が使用される（固定 `ric` ではなく、ユーザーが指定したDB名がそのまま UID として使われる）。
+> 注意: UID は `DBName` セルの値が使用される（固定 `ric` ではなく、ユーザーが指定したDB名がそのまま UID として使われる）。接続先は照射管理システム（Oracle DB）。
 
 ---
 

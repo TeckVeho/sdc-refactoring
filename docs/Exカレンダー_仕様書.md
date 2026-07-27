@@ -1,7 +1,7 @@
 # Exカレンダー 仕様書
 
 > **ファイル種別**: .xlsm（マクロ付き）
-> **用途**: 指定月から12か月分のカレンダーを表示し、会社休祭日をDBテーブル `ExYasumiX` と連携して管理する
+> **用途**: 指定月から12か月分のカレンダーを表示し、会社休祭日をDBテーブル `ExYasumiX` と連携して管理する（EXメニューの1ファイルとして照射管理システムを補完）
 > **VBA プロジェクトサイズ**: 7モジュール（ThisWorkbook, Sheet1, Ex休み読込, Ex休み更新, SQL_Execution, 終了処理, 初期化）
 > **外部連携ファイル**: なし（DB直接接続）
 
@@ -11,6 +11,15 @@
 ## 凡例（本仕様書の表記ルール）
 
 本仕様書では、保守時の判別を容易にするため、以下の表記ルールを使用します。
+
+### 用語規約
+
+| 用語 | 意味 |
+|---|---|
+| EXメニュー | ExRicSys フォルダに配置される VBA ファイル群（Ex*.xlsm）の総称 |
+| `ExRicSys` | 配置フォルダ名。初出時は〈EXメニュー配置フォルダ〉と注記 |
+
+### 表記規則
 
 | 種別 | 表記 | 例 |
 |---|---|---|
@@ -203,9 +212,33 @@
 | カレンダー | 休日登録 | `YasumiKousinn` | シートの休日フラグ変更をDBテーブル `ExYasumiX` に書き込む |
 | カレンダー | 終了 | `Bookを閉じる` | ブックを保存せずに閉じる |
 
+### 5.2 ショートカットキー
+
+| マクロ名 | ショートカット | 処理概要 |
+|---|---|---|
+| `クリア()` | **Ctrl+E** | カレンダーの休日データ（`HyoujiBi`・`YasumiDay`・`YasumiTB`）をクリアし初期状態に戻す |
+
 ---
 
 ## 6. VBA モジュール仕様
+
+### 6.0 全プロシージャ一覧
+
+| ✓ | # | モジュール | プロシージャ | 種別 | 概要 |
+|---|---|---|---|---|---|
+| ✓ | 1 | **ThisWorkbook.cls** | `Workbook_Open()` | Event | ウィンドウ最大化・シート保護・休日データクリア・ズーム調整 |
+| ✓ | 2 | **ThisWorkbook.cls** | `Workbook_BeforeClose()` | Event | 保存ダイアログ抑止 |
+| ✓ | 3 | **Sheet1.cls** | `Worksheet_BeforeRightClick()` | Event | 右クリックで休日フラグ切替（条件付き書式により色表示） |
+| ✓ | 4 | **Ex休み読込.bas** | `休日読込()` | Sub | DBテーブル`ExYasumiX`から休日データを読込みシートに反映 |
+| ✓ | 5 | **Ex休み更新.bas** | `YasumiKousinn()` | Sub | シートの休日フラグ変更をDBテーブル`ExYasumiX`に書き込む |
+| ✓ | 6 | **SQL_Execution.bas** | `Open_oraconDB()` | Sub | Oracle DB接続（ODBC） |
+| ✓ | 7 | **SQL_Execution.bas** | `SQL_Exe()` | Sub | SQL実行 |
+| ✓ | 8 | **SQL_Execution.bas** | `SQL_INSERT_UPDATE()` | Sub | INSERT/UPDATE汎用処理 |
+| ✓ | 9 | **SQL_Execution.bas** | `SQL_Delete()` | Sub | DELETE汎用処理 |
+| ✓ | 10 | **SQL_Execution.bas** | `Disp_Sheet()` | Sub | SQL結果をシートに出力 |
+| ✓ | 11 | **SQL_Execution.bas** | `Set_Array()` | Sub | SQL結果を配列に格納 |
+|   | 12 | **終了処理.bas** | `Bookを閉じる()` | Sub | ブックを閉じる（最後の1つならExcel終了） |
+| ✓ | 13 | **初期化.bas** | `クリア()` | Sub | カレンダー休日データクリア（ショートカット Ctrl+E） |
 
 ### 6.1 ThisWorkbook.cls
 
@@ -366,7 +399,7 @@ End Sub
 
 | DSN 名 | UID | PWD | 用途 |
 |---|---|---|---|
-| `ricdb` | `ric` | `t6101` | 休日テーブルの読み書き |
+| `ricdb` | `ric` | `t6101` | 照射管理システム — 休日テーブルの読み書き |
 
 ### 参照テーブル一覧
 

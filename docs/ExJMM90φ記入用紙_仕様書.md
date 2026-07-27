@@ -374,19 +374,19 @@
 
 ### 5.x ショートカットキー
 
-| マクロ名 | ショートカット | 備考 |
+| マクロ名 | ショートカット | 処理概要 |
 |---|---|---|
-| `CarsolDown()` | **Ctrl+\N14** | |
-| `印刷範囲の設定()` | **Ctrl+\N14** | |
-| `初期化()` | **Ctrl+S\N14** | |
-| `クリア()` | **Ctrl+E\N14** | |
+| `CarsolDown()` | （割り当てなし） | カーソル移動処理 |
+| `印刷範囲の設定()` | （割り当てなし） | 受付本数に応じた印刷範囲の動的設定 |
+| `初期化()` | **Ctrl+S** | DB読込・画面初期設定（`クリア()` → 線量計種類取得 → DB接続） |
+| `クリア()` | **Ctrl+E** | 画面クリア（測定データ・設定を初期化し初期状態に戻す） |
 
 ### 5.2 ユーザーフォーム上のボタン（サマリ）
 
 | ✓ | フォーム | コントロール | キャプション | イベント | 呼び出すプロシージャ | 動作概要 |
 |---|---|---|---|---|---|---|
-| ✓ | **StartForm.frm** | CommandButton1 | 受付番号入力 | Click | `CommandButton1_Click()` → `Set_Array()` | 在庫DB照会→受付情報をシートに代入、既存記録があれば開く |
-| ✓ | **StartForm.frm** | CommandButton2 | 終了 | Click | `CommandButton2_Click()` → `Bookを閉じる()` | 確認メッセージ後にブックを閉じる |
+| ✓ | **StartForm.frm** | CommandButton1 | 実行 | Click | `CommandButton1_Click()` → `Set_Array()` | 在庫DB照会→受付情報をシートに代入、既存記録があれば開く |
+| ✓ | **StartForm.frm** | CommandButton2 | キャンセル | Click | `CommandButton2_Click()` → `Bookを閉じる()` | 確認メッセージ後にブックを閉じる |
 
 ### 5.3 CommandBar に動的追加されるボタン（アドイン風）
 
@@ -407,8 +407,8 @@
 |---|---|---|---|---|
 | ✓ | **ThisWorkbook.cls** | `Workbook_Open()` | Event | 起動時に `mpHozon=False` 設定後 `初期化()` を呼出し |
 | ✓ | **ThisWorkbook.cls** | `Workbook_BeforeClose()` | Event | 未保存時に保存確認 → `フォルダー作成と保存()` を呼出し |
-| ✓ | **Sheet1.cls** | `Worksheet_Change()` | Event | セル変更時：本数入力→印刷範囲設定、計算式コード変更→パラメータ取得、ABS入力→線量計算 |
-| ✓ | **Sheet1.cls** | `Worksheet_SelectionChange()` | Event | セル選択時：厚さの自動入力（前行からコピー） |
+| ✓ | **Sheet1**（「測定値」） | `Worksheet_Change()` | Event | セル変更時：本数入力→印刷範囲設定、計算式コード変更→パラメータ取得、ABS入力→線量計算 |
+| ✓ | **Sheet1**（「測定値」） | `Worksheet_SelectionChange()` | Event | セル選択時：厚さの自動入力（前行からコピー） |
 | ✓ | **カーソル移動.bas** | `CarsolDown()` | Sub | `MoveAfterReturnDirection = xlDown` に設定 |
 |   | **カーソル移動.bas** | `CarsolRight()` | Sub | `MoveAfterReturnDirection = xlToRight` に設定 |
 | ✓ | **印刷範囲.bas** | `印刷範囲の設定()` | Sub | 受付本数から行数を算出し `PrintArea` と `PrintTitleRows` を設定 |
@@ -617,8 +617,8 @@ SELECT keisask FROM keicode WHERE yflg1='1' AND SUBSTR(keisask,2,1)='1' ORDER BY
 |---|---|---|---|---|---|
 | ✓ | TextUno | TextBox | — | — | 受付番号の入力欄 |
 |   | Label1 | Label | 受付番号 | — | TextUno のラベル |
-| ✓ | CommandButton1 | CommandButton | 受付番号入力 | — | 在庫DB照会→記録読込 or 初期値代入（→ `CommandButton1_Click()`） |
-| ✓ | CommandButton2 | CommandButton | 終了 | — | 確認メッセージ後にブックを閉じる（→ `CommandButton2_Click()` → `Bookを閉じる()`） |
+| ✓ | CommandButton1 | CommandButton | 実行 | — | 在庫DB照会→記録読込 or 初期値代入（→ `CommandButton1_Click()`） |
+| ✓ | CommandButton2 | CommandButton | キャンセル | — | 確認メッセージ後にブックを閉じる（→ `CommandButton2_Click()` → `Bookを閉じる()`） |
 
 #### イベント一覧
 
@@ -865,7 +865,7 @@ olevba 解析結果:
 
 > **注意**: DB 接続文字列（`DSN=ricdb;UID=ric;PWD=t6101`）が **SQL_Execution.bas** に平文で埋め込まれています。外部共有時はマスキング・権限分離を推奨します。
 
-> **シート保護パスワード**: `ijiruna`（「使用方法 」シートに平文記載あり）
+> **シート保護**: VBA コード（`初期設定.bas` → `初期化()`）では `ActiveSheet.Protect UserInterfaceOnly:=True` とパスワード引数なしで保護を設定しているため、**パスワードなしでシート保護は解除可能**。「使用方法 」シートに「解除キー: ijiruna」と記載があるが、実装とは不一致。
 
 ---
 

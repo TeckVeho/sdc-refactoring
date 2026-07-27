@@ -264,8 +264,8 @@ Ex出荷方法報告書発行登録.xlsm
 
 | マクロ名 | ショートカット | 処理概要 |
 |---|---|---|
-| `イベント有効()` | `r` | `Application.EnableEvents = True` に強制復旧（デバッグ用） |
-| `画面消去処理()` | `e` | `HikitoriTB` / `HouTB` をクリアして `$E$5` に移動 |
+| `イベント有効()` | **Ctrl+R** | `Application.EnableEvents = True` に強制復旧（デバッグ用） |
+| `画面消去処理()` | **Ctrl+E** | `HikitoriTB` / `HouTB` をクリアして `$E$5` に移動 |
 
 ### 5.3 起動元マッピング（全プロシージャ × 呼出元）
 
@@ -279,8 +279,8 @@ Ex出荷方法報告書発行登録.xlsm
 | `業者名と引取抽出()` | **デーた抽出.bas** | ① ボタン【出荷方法/報告書発行種別表示】 ② `Workbook_Open()` から Call | ボタン + 内部Call |
 | `引取報告書登録()` | **登録.bas** | ボタン【変更を登録する】 | ボタン |
 | `Bookを閉じる()` | **終了処理.bas** | ボタン【終了】 | ボタン |
-| `イベント有効()` | **ユーティリティ.bas** | ショートカットキー `r` | ショートカット |
-| `画面消去処理()` | **画面クリア引取業者.bas** | ショートカットキー `e` | ショートカット |
+| `イベント有効()` | **ユーティリティ.bas** | ショートカットキー Ctrl+R | ショートカット |
+| `画面消去処理()` | **画面クリア引取業者.bas** | ショートカットキー Ctrl+E | ショートカット |
 | `Open_oraconDB()` | **SQL_Execution.bas** | `SQL_INSERT_UPDATE()` / `SQL_Delete()` / `Disp_Sheet()` / `Set_Array()` から内部Call | 内部Call |
 | `SQL_Exe()` | **SQL_Execution.bas** | `SQL_INSERT_UPDATE()` / `SQL_Delete()` / `Disp_Sheet()` / `Set_Array()` から内部Call | 内部Call |
 | `SQL_INSERT_UPDATE()` | **SQL_Execution.bas** | `引取報告書登録()` から Call | 内部Call |
@@ -311,14 +311,14 @@ Ex出荷方法報告書発行登録.xlsm
 |---|---|---|---|---|
 | ✓ | **ThisWorkbook.cls** | `Workbook_Open()` | Event | シート保護設定後、`業者名と引取抽出()` を呼び出してデータ表示 |
 | ✓ | **ThisWorkbook.cls** | `Workbook_BeforeClose()` | Event | アラート非表示で保存済みフラグ設定 |
-| ✓ | **Sheet1.cls** | `Worksheet_Change()` | Event | G列変更時に報告書要不要をチェックし、不要なら強制上書き |
+| ✓ | **Sheet1**（「業者一覧」） | `Worksheet_Change()` | Event | G列変更時に報告書要不要をチェックし、不要なら強制上書き |
 | ✓ | **登録.bas** | `引取報告書登録()` | Sub | E/G列の差分行を `ExSeihinJ` に INSERT/UPDATE |
 | ✓ | **終了処理.bas** | `Bookを閉じる()` | Sub | 保存確認なしでブックを閉じる |
 | ✓ | **デーた抽出.bas** | `業者名と引取抽出()` | Sub | DB からデータ取得して「業者一覧」シートに展開 |
 |   | **デーた抽出.bas** | `報告書不要表示()` | Sub | 旧版の報告書不要設定処理（⚠ 呼出元なし・孤立コード） |
-|   | **ユーティリティ.bas** | `イベント有効()` | Sub | `EnableEvents = True` 強制復旧（ショートカット `r`） |
+|   | **ユーティリティ.bas** | `イベント有効()` | Sub | `EnableEvents = True` 強制復旧（ショートカット Ctrl+R） |
 |   | **ユーティリティ.bas** | `画面クリア()` | Sub | `HikitoriTB` / `HouTB` クリア（⚠ 呼出元なし・孤立コード） |
-|   | **画面クリア引取業者.bas** | `画面消去処理()` | Sub | `HikitoriTB` / `HouTB` クリア + E5 移動（ショートカット `e`） |
+|   | **画面クリア引取業者.bas** | `画面消去処理()` | Sub | `HikitoriTB` / `HouTB` クリア + E5 移動（ショートカット Ctrl+E） |
 | ✓ | **SQL_Execution.bas** | `Open_oraconDB()` | Sub | ADODB で Oracle DB に接続 |
 | ✓ | **SQL_Execution.bas** | `SQL_Exe()` | Sub | SQL 文を Execute で実行 |
 | ✓ | **SQL_Execution.bas** | `SQL_INSERT_UPDATE()` | Sub | 件数チェック → INSERT or UPDATE を動的生成・実行 |
@@ -539,7 +539,7 @@ End Sub
 
 | ✓ | プロシージャ | 処理概要 |
 |---|---|---|
-|   | `イベント有効()` | `Application.EnableEvents = True` に強制復旧（ショートカット `r`） |
+|   | `イベント有効()` | `Application.EnableEvents = True` に強制復旧（ショートカット Ctrl+R） |
 |   | `画面クリア()` | `HikitoriTB` と `HouTB` を空白にクリア（⚠ 呼出元なし。`業者名と引取抽出()` 内で同等処理がインライン実行されている） |
 
 ---
@@ -548,7 +548,7 @@ End Sub
 
 #### `画面消去処理()`
 
-**処理概要**: `HikitoriTB`・`HouTB` をクリアして E5 セルに移動する。ショートカットキー `e` で起動。
+**処理概要**: `HikitoriTB`・`HouTB` をクリアして E5 セルに移動する。ショートカットキー Ctrl+E で起動。
 
 ```vba
 Sub 画面消去処理()

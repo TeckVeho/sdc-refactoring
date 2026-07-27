@@ -299,8 +299,8 @@
 |---|---|---|---|---|
 | ✓ | **ThisWorkbook.cls** | `Workbook_Open()` | Event | ブック起動時に `スタート()` を呼び出して初期画面を設定 |
 |   | **ThisWorkbook.cls** | `Workbook_BeforeClose()` | Event | 保存確認を抑制してブックを閉じる |
-|   | **Sheet1.cls** | — | — | コードなし（Option Explicit のみ） |
-| ✓ | **Sheet2.cls** | `Worksheet_Change()` | Event | `KaisiDay` 変更時に `SyuuryouDay` を自動設定 |
+|   | **Sheet1**（「1号機集計表」） | — | — | コードなし（Option Explicit のみ） |
+| ✓ | **Sheet2**（「稼働時間」） | `Worksheet_Change()` | Event | `KaisiDay` 変更時に `SyuuryouDay` を自動設定 |
 | ✓ | **SQL_Execution.bas** | `Open_oraconDB()` | Sub | DSN=ricdb で ADODB.Connection を開く |
 | ✓ | **SQL_Execution.bas** | `SQL_Exe()` | Sub | 任意のSQL文を Execute して Recordset に格納 |
 | ✓ | **SQL_Execution.bas** | `SQL_INSERT_UPDATE()` | Sub | テーブルにレコードが存在すれば UPDATE、なければ INSERT |

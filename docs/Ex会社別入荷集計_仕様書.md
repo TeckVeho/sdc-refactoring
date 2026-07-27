@@ -299,9 +299,9 @@
 
 ### 5.x ショートカットキー
 
-| マクロ名 | ショートカット | 備考 |
+| マクロ名 | ショートカット | 処理概要 |
 |---|---|---|
-| `集計画面クリア()` | **Ctrl+E\N14** | |
+| `集計画面クリア()` | **Ctrl+E** | 集計画面のデータをクリアし初期状態に戻す |
 
 ### 5.2 ユーザーフォーム上のボタン
 
@@ -326,9 +326,9 @@
 |---|---|---|---|---|
 | ✓ | **ThisWorkbook.cls** | `Workbook_Open()` | Event | ウィンドウ最大化・シート保護・画面クリア呼出し |
 | ✓ | **ThisWorkbook.cls** | `Workbook_BeforeClose()` | Event | 保存ダイアログ抑制・Saved=True |
-| ✓ | **Sheet3.cls** | `Worksheet_BeforeDoubleClick()` | Event | C列（行11〜510）ダブルクリックで「○」切替 |
-| ✓ | **Sheet3.cls** | `Worksheet_BeforeRightClick()` | Event | K/L列（行11〜500）右クリックで会社コード選択 |
-| ✓ | **Sheet3.cls** | `Worksheet_Change()` | Event | D4変更時: 会社名/製品名DB読込、D5変更時: 入力欄ロック制御 |
+| ✓ | **Sheet3**（「設定」） | `Worksheet_BeforeDoubleClick()` | Event | C列（行11〜510）ダブルクリックで「○」切替 |
+| ✓ | **Sheet3**（「設定」） | `Worksheet_BeforeRightClick()` | Event | K/L列（行11〜500）右クリックで会社コード選択 |
+| ✓ | **Sheet3**（「設定」） | `Worksheet_Change()` | Event | D4変更時: 会社名/製品名DB読込、D5変更時: 入力欄ロック制御 |
 | ✓ | **会社集計.bas** | `集計MAIN()` | Sub | 入力チェック→製品選択→DB集計実行のメイン処理 |
 | ✓ | **会社集計.bas** | `会社入荷数集計()` | Sub | 期間列ループ→入荷数DB読込→集計表表示→合計計算 |
 | ✓ | **会社集計.bas** | `集計表に表示()` | Sub | 設定シートの入荷数一時データを集計表に転記 |

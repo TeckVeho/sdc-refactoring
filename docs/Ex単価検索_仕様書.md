@@ -288,12 +288,12 @@
 
 ### 5.x ショートカットキー
 
-| マクロ名 | ショートカット | 備考 |
+| マクロ名 | ショートカット | 処理概要 |
 |---|---|---|
-| `イベント有効()` | **Ctrl+\N14** | |
-| `AllCls()` | **Ctrl+E\N14** | |
-| `画面消去()` | **Ctrl+\N14** | |
-| `画面初期化()` | **Ctrl+E\N14** | |
+| `イベント有効()` | （割り当てなし） | `Application.EnableEvents = True` に強制復旧（デバッグ用） |
+| `AllCls()` | **Ctrl+E** | 全データクリア（一覧・検索条件を初期化） |
+| `画面消去()` | （割り当てなし） | 画面表示領域のクリア |
+| `画面初期化()` | **Ctrl+E** | 画面初期化（DB再読込を伴うクリア） |
 
 ### 5.2 ユーザーフォーム上のボタン
 
@@ -316,8 +316,8 @@
 
 | ✓ | モジュール | プロシージャ | 種別 | 概要 |
 |---|---|---|---|---|
-| ✓ | **Sheet1.cls** | `Worksheet_BeforeDoubleClick()` | Event | K列9行以降のダブルクリックで会社コードを `KaiCd` に代入 |
-| ✓ | **Sheet1.cls** | `Worksheet_Change()` | Event | B5/C5/D5/E5セル変更時に対応する表示処理を呼び出し |
+| ✓ | **Sheet1**（「Main」） | `Worksheet_BeforeDoubleClick()` | Event | K列9行以降のダブルクリックで会社コードを `KaiCd` に代入 |
+| ✓ | **Sheet1**（「Main」） | `Worksheet_Change()` | Event | B5/C5/D5/E5セル変更時に対応する表示処理を呼び出し |
 | ✓ | **ThisWorkbook.cls** | `Workbook_Open()` | Event | `Start_GO()` を呼び出し（起動処理） |
 | ✓ | **ThisWorkbook.cls** | `Workbook_BeforeClose()` | Event | `画面解除()` 呼び出し後、保存せず終了 |
 |   | **ThisWorkbook.cls** | `Workbook_Activate()` | Event | ウィンドウ最大化 |

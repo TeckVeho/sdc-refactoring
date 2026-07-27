@@ -1,7 +1,7 @@
 # Ex生産情報一覧1 仕様書
 
 > **ファイル種別**: .xlsm（マクロ付き）
-> **用途**: 照射装置（1号機・2号機・3号機・EB）の未照射在庫品の生産計画・出荷予定・照射スケジュールを管理し、DBからデータを取得して一覧表示・計画更新・出庫記録を行う総合管理ツール
+> **用途**: 照射装置（1号機・2号機・3号機・EB）の未照射在庫品の生産計画・出荷予定・照射スケジュールを管理し、DBからデータを取得して一覧表示・計画更新・出庫記録を行う総合管理ツール（EXメニューの1ファイルとして照射管理システムを補完）
 > **VBA プロジェクト**: モジュール 56 本（.bas 42 / .cls 7 / .frm 7）
 > **外部連携**: DSN=ricdb（Oracle DB）、DB接続先 IP: 163.59.144.156
 > **解析日**: 2026-06-08（excel-to-md スキルによる自動解析・フィードバック反映改訂版）
@@ -11,6 +11,15 @@
 ## 凡例（本仕様書の表記ルール）
 
 本仕様書では、保守時の判別を容易にするため、以下の表記ルールを使用します。
+
+### 用語規約
+
+| 用語 | 意味 |
+|---|---|
+| EXメニュー | ExRicSys フォルダに配置される VBA ファイル群（Ex*.xlsm）の総称 |
+| `ExRicSys` | 配置フォルダ名。初出時は〈EXメニュー配置フォルダ〉と注記 |
+
+### 表記規則
 
 | 種別 | 表記 | 例 |
 |---|---|---|
@@ -553,14 +562,14 @@
 
 ### 5.x ショートカットキー
 
-| マクロ名 | ショートカット | 備考 |
+| マクロ名 | ショートカット | 処理概要 |
 |---|---|---|
-| `初期化()` | **Ctrl+\N14** | |
-| `AddCmdBarButton()` | **Ctrl+P\N14** | |
-| `Ric3TRに戻る()` | **Ctrl+R\N14** | |
-| `画面CLS()` | **Ctrl+\N14** | |
-| `GamennFukki()` | **Ctrl+H\N14** | |
-| `生産情報開始処理()` | **Ctrl+S\N14** | |
+| `初期化()` | （割り当てなし） | 画面初期化処理 |
+| `AddCmdBarButton()` | **Ctrl+P** | CommandBarボタン追加 |
+| `Ric3TRに戻る()` | **Ctrl+R** | 3号機TRシートに切替 |
+| `画面CLS()` | （割り当てなし） | 画面クリア処理 |
+| `GamennFukki()` | **Ctrl+H** | 画面復帰 |
+| `生産情報開始処理()` | **Ctrl+S** | 生産情報の初期読込・表示 |
 
 ### 5.2 ユーザーフォーム上のボタン（サマリ）
 
@@ -755,13 +764,13 @@
 |   | **ファンクション.bas** | `照射日()` | Function | 照射日判定 |
 |   | **ファンクション.bas** | `NGCount()` | Function | NG件数カウント |
 |   | **ファンクション.bas** | `MisuuN()` | Function | 未数N取得 |
-| ✓ | **Sheet1.cls** | `Worksheet_BeforeDoubleClick()` | Event | 「未処理品一覧」ダブルクリック |
-|   | **Sheet1.cls** | `Worksheet_BeforeRightClick()` | Event | 「未処理品一覧」右クリック |
-| ✓ | **Sheet3.cls** | `Worksheet_Activate()` | Event | 「Ric3TR」アクティブ時 |
-| ✓ | **Sheet3.cls** | `Worksheet_Change()` | Event | 「Ric3TR」セル変更時 |
-|   | **Sheet3.cls** | `Worksheet_Deactivate()` | Event | 「Ric3TR」非アクティブ時 |
-|   | **Sheet3.cls** | `Worksheet_BeforeRightClick()` | Event | 「Ric3TR」右クリック |
-|   | **Sheet3.cls** | `Worksheet_SelectionChange()` | Event | 「Ric3TR」選択変更時 |
+| ✓ | **Sheet1**（「未処理品一覧」） | `Worksheet_BeforeDoubleClick()` | Event | 「未処理品一覧」ダブルクリック |
+|   | **Sheet1**（「未処理品一覧」） | `Worksheet_BeforeRightClick()` | Event | 「未処理品一覧」右クリック |
+| ✓ | **Sheet3**（「Ric3TR」） | `Worksheet_Activate()` | Event | 「Ric3TR」アクティブ時 |
+| ✓ | **Sheet3**（「Ric3TR」） | `Worksheet_Change()` | Event | 「Ric3TR」セル変更時 |
+|   | **Sheet3**（「Ric3TR」） | `Worksheet_Deactivate()` | Event | 「Ric3TR」非アクティブ時 |
+|   | **Sheet3**（「Ric3TR」） | `Worksheet_BeforeRightClick()` | Event | 「Ric3TR」右クリック |
+|   | **Sheet3**（「Ric3TR」） | `Worksheet_SelectionChange()` | Event | 「Ric3TR」選択変更時 |
 | ✓ | **出荷方法更新.bas** | `製品情報ファイル更新()` | Sub | 製品情報テーブルの更新 |
 |   | **出荷方法更新.bas** | `古い受付番号削除()` | Sub | 古い受付番号の削除 |
 |   | **ErrCheck.bas** | `ErrCheckMsg()` | Sub | エラーメッセージ表示 |
@@ -929,7 +938,7 @@
 
 | DSN 名 | UID | PWD | 用途 |
 |---|---|---|---|
-| `ricdb` | `ric` | `t6101` | 全テーブルへのメインアクセス |
+| `ricdb` | `ric` | `t6101` | 照射管理システムDB — 全テーブルへのメインアクセス |
 
 > **DB サーバー IP**: 163.59.144.156
 
@@ -939,23 +948,37 @@
 
 | ✓ | テーブル名 | 区分 | 主な用途 | キー列 | 参照/更新列 |
 |---|---|---|---|---|---|
-| ✓ | `zaiko` | 参照 | γ線照射在庫マスタ | `uno` | `kaisyacd`, `misyousu`, `syouso`, `nyukabi`, `siteisn`, `pass` |
-| ✓ | `ExKeikakuX` | **参照＋更新** | 生産計画 | `uno` | 更新: `kakunin`, `syukkabi`, `syuhouhou`, `bikou1` |
-| ✓ | `ExYoyakuX` | **参照＋更新** | 予約データ | `yoyakuno` | 更新: 全22カラム（`nyukabi`, `kaisyacd`, `siteisn`, `pass`, `nouki`, `kakunin`, `syukkabi`, `syuhouhou`, `bikou`, `updateid`, `updateday`, `yuukou` 等） |
-| ✓ | `ExR3SYukko` | **更新（DELETE+INSERT）** | 3号機出庫順 | `senkno` + `siteibi` | `syukkojyun`, `senkno`, `siteibi` |
-|   | `tsyjmst` | 参照 | 特殊条件マスタ | `(複合)` | `tokjyo1`〜`5`, `dspno` |
-|   | `ExSeihinJ` / `ExSeihinZ` | 参照 | 製品情報 | `kaisyacd` + `sehncd` | `tumikae` 等 |
-|   | `sejofile` | 参照 | 生産条件 | — | `nyukajoken`, `shukajoken` |
-|   | `syouk2` / `syouj2` | 参照 | 処理・照射中 | — | `syoriflg`, `pass` |
-|   | `torak3` / `TORAK` | 参照 | トラッキング | — | `STNO`, `TRKDATA` |
-| ✓ | `ExKanriTB` | 参照 | 装置管理パラメータ | `SIKIBETU` | `RICVM`, `HPPP` |
-|   | `ExYasumiX` | 参照 | 休日テーブル | — | `kyuujitu1` |
-| ✓ | `SHAINMST` | 参照 | 社員マスタ（資格確認） | `shano` | `shaname`, `shask`, `hshika`, `kshika`, `U3shika` |
-|   | `zaikoeb` / `sehmst` | 参照 | EB在庫（2022/09改修） | — | — |
+|   | `zaiko` | 参照 | γ線照射在庫マスタ | `uno` | `kaisyacd`, `misyousu`, `syouso`, `nyukabi`, `siteisn`, `pass`, `kainame`, `nouki`, `syousu`, `syouzusu`, `nyukasu`, `sehncd`, `syuhnsu`, `syukasu`, `sehijken`, `bikou` |
+| ✓ | `ExKeikakuX` | **参照＋更新** | 生産計画 | `uno` | 更新: `kakunin`, `syukkabi`, `syuhouhou`, `bikou1`, `updateid`, `updateday`, `souti`, `kaisyacd`, `sehncd`, `syouho`, `housyube`, `houtmg`, `houfax`（`ZaikoKousinn()` / `製品情報ファイル更新()` から UPDATE / INSERT）。DELETE: `古い受付番号削除()` で10,000件超かつ6ヶ月前のレコードを削除 |
+| ✓ | `ExYoyakuX` | **参照＋更新** | 予約データ | `yoyakuno` | 更新: 全22カラム（`nyukabi`, `kaisyacd`, `siteisn`, `pass`, `nouki`, `kakunin`, `syukkabi`, `syuhouhou`, `bikou`, `updateid`, `updateday`, `yuukou`, `souti` 等）。`GyouDel()` で `yuukou='0'` に UPDATE。`予約削除()` で無効かつ古い予約を DELETE |
+| ✓ | `ExR3SYukko` | **更新（DELETE+INSERT）** | 3号機出庫順 | `senkno` + `siteibi` | `syukkojyun`, `senkno`, `siteibi`（`Ric3出庫記録()` から全件 DELETE → INSERT） |
+| ✓ | `ExKanriTB` | **参照＋更新** | 装置管理パラメータ | `SIKIBETU` | 参照: `RICVM`, `HPPP`, `kousinn`, `idouflg`, `sengen`, `yoyakuno`。更新: `Ric2Set_Click()` で SIKIBETU=4、`Ric3Set_Click()` で SIKIBETU=5、`Ric3停止期間記録()` で SIKIBETU=8 を DELETE → INSERT/UPDATE。`R3タイマーチェック処理()` で SIKIBETU=5 の `yoyakuno` を UPDATE |
+| ✓ | `SHAINMST` | **参照＋更新** | 社員マスタ（資格確認・業務資格登録） | `shano` | 参照: `shaname`, `shask`, `hshika`, `kshika`。更新: `ComTouroku_Click()` で `kshika='1'` に UPDATE、`ComSakujyo_Click()` で `kshika='0'` に UPDATE |
+|   | `tsyjmst` | 参照 | 特殊条件マスタ | `kaisyacd` + `sehncd` | `ukedspno`, `syodspno`, `tnyhhtno`, `sendspno`, `sykhhtno`, `tokjyo1`〜`tokjyo5` |
+|   | `ExSeihinJ` | 参照 | 製品情報（出荷方法） | `kaisyacd` | `hikitori`（出荷方法）, `housyube`（報告書発行種別） |
+|   | `ExSeihinZ` | 参照 | 製品情報（追加） | `kaisyacd` + `sehncd` | γ在庫読込 JOIN で使用 |
+|   | `sejofile` | 参照 | 生産条件 | `uno` | `nyukajoken`, `shoshagojoken`, `shukajoken`, `tekibin`, `shukani`, `shoshabishi`, `shoshabishijoken` |
+|   | `sehmst` | 参照 | 製品マスタ | `kaisyacd` + `sehncd` | `siteisn`, `pass`, `syouso`, `tani`, `seiname`, `haba`, `nagasa`, `takasa`, `jyury`, `syouho` |
+|   | `syouk2` | 参照 | 照射処理中データ（2/3号機） | `senkno` | `syoriflg`, `pass`, `uno1`〜`uno8` |
+|   | `syouj2` | 参照 | 照射実績データ | — | `pass`, `jituno`, `syouso`, `syouflg`, `kmmdd`, `nyutime`, `taitime` |
+|   | `syoukj3` | 参照 | 3号機照射工程管理 | `sykno` | `senkno`, `pass`, `uno1`〜`uno5`, `syoush_f`。`Ric3号機予想データRead()` で Ric3TR シートに展開、`照射中と未投入処理量()` で計画済未投入HP集計 |
+|   | `TORAK` | 参照 | トラッキングデータ | `stno` | `STNO`, `TORAKSU`, `TRKDATA` |
+|   | `sengnr1` | 参照 | 1号機線源昇降イベント | `sdate`, `stime` | `event`, `sdate`, `stime`。`稼働状況()` で直近イベント取得し装置状態表示（TextBoxR1） |
+|   | `kyouj2` | 参照 | 2号機運転データ（回転速度記録） | `rectime` | `rectime`, `mokuspd`, `totalwgt`。`稼働状況()` で直近速度取得（TextBoxR2）、`R2速度チェック処理()` で速度・重量チェック |
+|   | `sengnr3` | 参照 | 3号機線源昇降イベント | `sdate` | `event`, `sdate`。`稼働状況()` で直近イベント取得し装置状態表示（TextBoxR3） |
+|   | `tokumst` | 参照 | 得意先マスタ（会社名取得） | `kaisyacd` | `coname`。`会社名()` で会社コード→会社名変換 |
+|   | `huteki` | 参照 | 不適合品データ | `uno` + `skind` | `ngcnt`（NG件数）, `okcnt`（OK件数）, `hensu`（変数）。`NGCount()` で未照射品（skind='0'）、`在庫詳細表示()` で照射済品（skind='1'）の不適合データ取得 |
+|   | `senkk` | 参照 | 線源計番号マスタ | — | `senkno`。`Ric3号機予想データRead()` で予定計画の線源計番号を取得 |
+|   | `zaikok_v` | 参照 | 在庫確認ビュー（EB在庫用・旧ロジック） | `uno` | EB在庫表示時に `zaiko` の代替として使用（2022/09改修前のコードではアクティブ、改修後は `zaikoeb` に変更）。`在庫詳細表示()` では装置='4'(EB) 時に現在も使用 |
+|   | `zaikoeb` | 参照 | EB在庫マスタ（2022/09改修後） | `uno` | EB在庫 Read で使用。`ReadDataFromDB()` 内で `zaiko` の代替（EB装置選択時） |
+|   | `ExYasumiX` | 参照 | 休日テーブル | — | `kyuujitu1`, `flg`。`KyuujituRead()` で出荷日計算用の休日一覧取得 |
+|   | `ExR3Syukko` | 参照 | 3号機出庫順（参照用） | `siteibi` | `senkno`, `syukkojyun`。`Ric3号機予想データRead()` で既存出庫順の読込 |
 
 > **「キー列」の定義**: JOIN 条件または UPDATE/DELETE の WHERE 句で使用される列を示す。
 
-### 8.3 主要 SQL（γ在庫読込）
+### 8.3 SQL 一覧
+
+#### 8.3.1 γ在庫読込（`ReadDataFromDB()` / **データ取得.bas**）
 
 ```sql
 SELECT z.Uno, z.nyukabi, TO_NUMBER(z.kaisyacd), TRIM(z.kainame),
@@ -984,6 +1007,277 @@ ORDER BY z.kaisyacd, z.uno
 | `z.syouso = '1'` | 1号機・全在庫 |
 | （条件なし） | 全装置・全在庫 |
 | `z.syouzusu*1<z.nyukasu*1` | 追加: 未完了品フィルタ（「未照射品のみ」表示時） |
+
+#### 8.3.2 EB在庫読込（`ReadDataFromDB()` / **データ取得.bas**）
+
+```sql
+-- EB装置選択時（2022/09改修後）
+SELECT DISTINCT z.Uno, z.nyukabi, TO_NUMBER(z.kaisyacd), TRIM(z.kainame),
+       s.siteisn*1, s.pass, s.jyougsn*1, ...
+FROM zaikoeb z, ExKeikakuX k, ExSeihinJ j, sehmst s
+WHERE z.uno = k.uno(+)
+  AND z.kaisyacd||z.sehncd = s.kaisyacd||s.sehncd
+  AND z.syukasu*1 < z.nyukasu*1
+  AND s.syouso = '4'
+ORDER BY z.kaisyacd, z.uno
+```
+
+#### 8.3.3 在庫詳細表示（`在庫詳細表示()` / **在庫詳細.bas**）
+
+```sql
+-- γ在庫（装置 1/2/3号機）
+SELECT z.uno, z.kainame, z.nyukabi, TO_NUMBER(z.nyukasu), TO_NUMBER(z.misyousu),
+       TO_NUMBER(z.Syousu), TO_NUMBER(z.syouzusu), TO_NUMBER(z.syuhnsu),
+       TO_NUMBER(z.syukasu), z.nouki, k.syukkabi, z.syouso, k.kakunin,
+       z.sehijken, s.haba, s.nagasa, s.takasa, s.jyury, z.bikou,
+       j.NYUKAJOKEN, j.SHOSHAGOJOKEN, j.SHUKAJOKEN, j.TEKIBIN, j.SHUKANI,
+       j.SHOSHABISHI, j.SHOSHABISHIJOKEN, s.seiname, s.tani, z.sehncd, z.kaisyacd
+FROM zaiko z, ExKeikakuX k, sehmst s, sejofile j
+WHERE z.uno = k.uno(+)
+  AND z.uno = '{受付番号}'
+  AND z.kaisyacd = s.kaisyacd AND z.sehncd = s.sehncd
+  AND z.uno = j.uno(+)
+
+-- EB在庫（装置='4'）の場合 zaiko → zaikok_v に差し替え
+FROM zaikok_v z, ExKeikakuX k, sehmst s, sejofile j ...
+```
+
+#### 8.3.4 不適合品データ取得（`NGCount()` / **ファンクション.bas** および `在庫詳細表示()` / **在庫詳細.bas**）
+
+```sql
+-- 未照射品の不適合データ（NGCount 関数）
+SELECT TO_NUMBER(ngcnt), TO_NUMBER(okcnt), TO_NUMBER(hensu)
+FROM huteki
+WHERE uno = '{受付番号}' AND skind = '0'
+
+-- 照射済品の不適合データ（在庫詳細表示）
+SELECT ngcnt, okcnt, hensu
+FROM huteki
+WHERE skind = '1' AND uno = '{受付番号}'
+```
+
+#### 8.3.5 特殊条件取得（`在庫詳細表示()` / **在庫詳細.bas**）
+
+```sql
+SELECT ukedspno, syodspno, tnyhhtno, sendspno, sykhhtno,
+       tokjyo1, tokjyo2, tokjyo3, tokjyo4, tokjyo5
+FROM tsyjmst
+WHERE kaisyacd = '{会社コード}' AND sehncd = '{製品コード}'
+```
+
+#### 8.3.6 装置稼働状況（`稼働状況()` / **装置稼働状況.bas**）
+
+```sql
+-- 1号機：直近イベント
+SELECT event, sdate, stime FROM sengnr1
+WHERE sdate||stime = (SELECT MAX(sdate||stime) FROM sengnr1)
+
+-- 3号機：直近イベント
+SELECT event, sdate FROM sengnr3
+WHERE sdate = (SELECT MAX(sdate) FROM sengnr3)
+
+-- 2号機：直近速度データ
+SELECT rectime FROM kyouj2
+WHERE rectime > '{基準日}'
+ORDER BY rectime DESC
+```
+
+#### 8.3.7 2号機速度チェック（`R2速度チェック処理()` / **R2速度チェック.bas**）
+
+```sql
+SELECT TO_NUMBER(mokuspd), TO_NUMBER(totalwgt), rectime
+FROM kyouj2
+WHERE rectime >= '{当日} 000000'
+ORDER BY rectime DESC
+```
+
+#### 8.3.8 照射中・未投入処理量集計（`照射中と未投入処理量()` / **在庫詳細.bas**）
+
+```sql
+-- 2号機照射中の残HP
+SELECT SUM(pass - jituno) FROM Syouj2 WHERE syouso = '2' AND syouflg = '0'
+
+-- 2号機計画済未投入HP
+SELECT SUM(pass) FROM Syouk2 WHERE syoriflg = '0'
+
+-- 3号機照射中の残HP
+SELECT SUM(pass - jituno) FROM Syouj2 WHERE syouso = '3'
+
+-- 3号機計画済未投入HP
+SELECT SUM(pass) FROM Syoukj3 WHERE syoush_f = 'i' OR syoush_f = 'c'
+```
+
+#### 8.3.9 計画済未投入パス数（`計画済未投入()` / **スタート処理.bas**）
+
+```sql
+SELECT SUM(pass) FROM syouk2 WHERE syoriflg = '0'
+```
+
+#### 8.3.10 3号機予想データ読込（`Ric3号機予想データRead()` / **R3Data読込.bas**）
+
+```sql
+-- 3号機未照射品の照射工程データ
+SELECT '', '', SUBSTR(sykno,6) 線量計No, '',
+       TO_NUMBER(PASS) パス数, '', '',
+       TO_NUMBER(SUBSTR(UNO1,7)), TO_NUMBER(SUBSTR(UNO2,7)), TO_NUMBER(SUBSTR(UNO3,7)),
+       TO_NUMBER(SUBSTR(UNO4,7)), TO_NUMBER(SUBSTR(UNO5,7))
+FROM syoukj3
+WHERE SYOUSH_F = '0' OR SYOUSH_F = 'C' OR SYOUSH_F = 'i'
+ORDER BY sykno
+
+-- 未投入計画データ
+SELECT TO_NUMBER(SENKNO), TO_NUMBER(PASS), 0,
+       SUBSTR(UNO1,7,4)||SUBSTR(UNO2,7,4)||...||SUBSTR(UNO8,7,4)
+FROM SYOUK2
+WHERE SYORIFLG = '0'
+ORDER BY SENKNO
+
+-- 予定計画の線源計番号
+SELECT TO_NUMBER(SENKNO) FROM senkk
+
+-- 既存出庫順の読込
+SELECT senkno FROM ExR3Syukko
+WHERE siteibi > {180日前}
+ORDER BY syukkojyun
+```
+
+#### 8.3.11 トラッキングデータ（`Ric3号機予想データRead()` / **R3Data読込.bas**）
+
+```sql
+SELECT STNO, TO_NUMBER(TORAKSU), TRKDATA FROM TORAK ORDER BY stno
+```
+
+#### 8.3.12 会社名変換（`会社名()` / **データ取得.bas**）
+
+```sql
+SELECT TRIM(coname) FROM tokumst WHERE kaisyacd = '{会社コード}'
+```
+
+#### 8.3.13 引取業者読込（`HikitoriRead()` / **サブルーチン.bas**）
+
+```sql
+SELECT kaisyacd*1, hikitori FROM ExSeihinJ ORDER BY kaisyacd
+```
+
+#### 8.3.14 休日テーブル（`KyuujituRead()` / `KyuujituSuu()` / **サブルーチン.bas**）
+
+```sql
+-- 休日一覧
+SELECT kyuujitu1 FROM ExYasumiX
+WHERE kyuujitu1 >= {当日} AND flg = '休'
+ORDER BY kyuujitu1
+
+-- 休日件数
+SELECT COUNT(*) FROM ExYasumiX
+WHERE kyuujitu1 >= {当日} AND flg = '休'
+```
+
+#### 8.3.15 装置パラメータ（`Ric23ParaM_Read()` / `Ric3ParaM_Read()` / **サブルーチン.bas**、`Ric2Hyouji_Click()` / `Ric3Hyouji_Click()` / **SyoriSettei.frm**）
+
+```sql
+-- 2号機パラメータ
+SELECT ricvm, kousinn, hppp FROM ExKanriTB WHERE SIKIBETU = '4'
+
+-- 3号機パラメータ
+SELECT ricvm, kousinn, hppp FROM ExKanriTB WHERE SIKIBETU = '5'
+
+-- 3号機停止期間読込
+SELECT ricvm, hppp, idouflg, sengen FROM ExKanriTB WHERE sikibetu = '8'
+```
+
+#### 8.3.16 資格確認（`SikakuCheck()` / **資格確認.bas**、`ComKakunin_Click()` / **SyoriSettei.frm**）
+
+```sql
+-- 更新操作時の資格確認
+SELECT TRIM(shaname) FROM SHAINMST
+WHERE shano = '{社員ID}' AND shask = '{パスワード}'
+  AND hshika = '1' AND {資格条件}
+
+-- 営業業務資格登録用の登録者確認
+SELECT COUNT(*) FROM SHAINMST
+WHERE shano = '{登録者ID}' AND shask = '{登録者PW}'
+  AND hshika = '1' AND kshika = '1'
+
+-- 被登録者の社員名取得
+SELECT TRIM(shaname) FROM SHAINMST
+WHERE shano = '{被登録者ID}' AND hshika = '1'
+```
+
+#### 8.3.17 在庫読込と受付番号別完了表示（`在庫読込と範囲名と納期日()` / `受付番号別完了表示()` / **R2予想計算メイン.bas**）
+
+```sql
+SELECT TO_NUMBER(SUBSTR(z.uno,7)) 受付番号,
+       TRIM(REPLACE(z.kainame,'株式会社','')) 会社名,
+       TRIM(z.nouki) 納期, e.syukkabi 出荷日,
+       TO_NUMBER(z.misyousu) 未照射,
+       nyukasu-misyousu-syousu-syouzusu 未投入数,
+       TO_NUMBER(z.syousu) 照射中, '' 状態
+FROM zaiko z, ExKeikakuX e
+WHERE z.syouso = '2'
+  AND z.uno = e.uno(+)
+  AND TO_NUMBER(z.nyukasu) > TO_NUMBER(z.syouzusu)
+ORDER BY z.uno
+```
+
+#### 8.3.18 3号機タイマーチェック（`R3タイマーチェック処理()` / **R3タイマーチェック.bas**）
+
+```sql
+-- 登録日チェック
+SELECT yoyakuno, kousinn FROM ExKanriTB WHERE sikibetu = '5'
+
+-- 直近の照射実績
+SELECT TO_NUMBER(jituno), nyutime, taitime FROM syouj2
+WHERE uno > '{当年月基準}' AND kmmdd = '{直近日}'
+  AND TO_NUMBER(jituno) > 3 AND syouso = '3'
+ORDER BY TO_NUMBER(jituno) DESC
+```
+
+#### 8.3.19 製品情報ファイル更新（`製品情報ファイル更新()` / **出荷方法更新.bas**）
+
+```sql
+-- ExKeikakuX に未登録の受付番号を zaiko から抽出
+SELECT z.uno, z.kaisyacd, z.sehncd
+FROM zaiko z
+WHERE NOT EXISTS (SELECT * FROM ExkeikakuX WHERE z.uno = uno)
+
+-- 出荷方法・報告書情報の取得
+SELECT z.uno, j.hikitori, s.syouho, j.housyube, z.kaisyacd, z.sehncd, z.syouso
+FROM zaiko z, ExseihinJ j, sehmst s
+WHERE z.uno = '{受付番号}'
+  AND z.kaisyacd = '{会社コード}'
+  AND z.kaisyacd = j.kaisyacd(+)
+  AND (z.kaisyacd = s.kaisyacd AND z.sehncd = s.sehncd)
+```
+
+#### 8.3.20 DB不要データ削除（`計画削除()` / `予約削除()` / **DB不要データ削除.bas**、`古い受付番号削除()` / **出荷方法更新.bas**）
+
+```sql
+-- ExKeikakuX レコード件数確認
+SELECT COUNT(*) FROM ExKeikakuX
+
+-- ExKeikakuX 古いレコード削除（10,000件超の場合）
+DELETE ExKeikakuX WHERE SUBSTR(updateday,1,10) < '{6ヶ月前}'
+
+-- ExYoyakuX レコード件数確認
+SELECT COUNT(*) FROM ExYoyakuX
+
+-- ExYoyakuX 無効＋古い予約削除
+DELETE ExYoyakuX WHERE yuukou = '0' AND updateday < {基準日}
+```
+
+#### 8.3.21 予定行の削除（`GyouDel()` / **コマンドサブルーチン.bas**）
+
+```sql
+UPDATE ExYoyakuX SET yuukou = '0', updateid = '{社員ID}', updateday = '{現在日時}'
+WHERE yoyakuno = {予約番号}
+```
+
+#### 8.3.22 3号機出庫記録（`Ric3出庫記録()` / **R3出庫記録処理.bas**）
+
+```sql
+DELETE ExR3SYukko WHERE syukkojyun > 0
+INSERT INTO ExR3SYukko (syukkojyun, senkno, siteibi) VALUES ({出庫順}, {線源計No}, {指定日})
+```
 
 ### 8.4 外部ファイル連携
 

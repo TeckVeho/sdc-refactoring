@@ -451,20 +451,20 @@ VBA による直接操作はないが、印刷パラメータ設定の対象シ�
 | ✓ | **ThisWorkbook.cls** | `Workbook_BeforeClose()` | Event | 終了時に未記録確認・保存促進 |
 | ✓ | **ThisWorkbook.cls** | `Workbook_BeforePrint()` | Event | シート別印刷パラメータ設定 |
 |   | **ThisWorkbook.cls** | `Workbook_BeforeSave()` | Event | DebugF以外は保存禁止 |
-| ✓ | **Sheet1.cls** | `Worksheet_Activate()` | Event | 「勤務計画」アクティブ時の行表示制御 |
-|   | **Sheet1.cls** | `Worksheet_BeforeDoubleClick()` | Event | ダブルクリックで黄色ハイライト |
-| ✓ | **Sheet1.cls** | `Worksheet_BeforeRightClick()` | Event | 右クリックでセル消去（権限制御付） |
-| ✓ | **Sheet1.cls** | `Worksheet_Change()` | Event | 年月日入力時に表体裁・DB読込実行 |
-|   | **Sheet1.cls** | `Worksheet_Deactivate()` | Event | 空（処理なし） |
-| ✓ | **Sheet1.cls** | `Worksheet_SelectionChange()` | Event | セル選択変更でコピー＆ペースト制御 |
-| ✓ | **Sheet1.cls** | `myActivCell()` | Sub | 勤務記号のコピー元→先ペースト処理 |
-|   | **Sheet1.cls** | `Kibou()` | Function | 希望休み検出判定 |
-| ✓ | **Sheet3.cls** | `Worksheet_BeforeRightClick()` | Event | 「トイレ掃除」右クリックで消去 |
-| ✓ | **Sheet3.cls** | `Worksheet_SelectionChange()` | Event | セル選択変更でコピー＆ペースト制御 |
-| ✓ | **Sheet3.cls** | `myActivCell()` | Sub | トイレ掃除記号のコピー＆ペースト処理 |
-| ✓ | **Sheet6.cls** | `Worksheet_Change()` | Event | 「社員データ」社員番号入力で照射管理DB照会 |
-| ✓ | **Sheet6.cls** | `SyainRead()` | Sub | 社員番号→社員名DB検索 |
-|   | **Sheet6.cls** | `XSyainRead()` | Sub | 社員番号→社員名DB検索（別版） |
+| ✓ | **Sheet1**（「勤務計画」） | `Worksheet_Activate()` | Event | 「勤務計画」アクティブ時の行表示制御 |
+|   | **Sheet1**（「勤務計画」） | `Worksheet_BeforeDoubleClick()` | Event | ダブルクリックで黄色ハイライト |
+| ✓ | **Sheet1**（「勤務計画」） | `Worksheet_BeforeRightClick()` | Event | 右クリックでセル消去（権限制御付） |
+| ✓ | **Sheet1**（「勤務計画」） | `Worksheet_Change()` | Event | 年月日入力時に表体裁・DB読込実行 |
+|   | **Sheet1**（「勤務計画」） | `Worksheet_Deactivate()` | Event | 空（処理なし） |
+| ✓ | **Sheet1**（「勤務計画」） | `Worksheet_SelectionChange()` | Event | セル選択変更でコピー＆ペースト制御 |
+| ✓ | **Sheet1**（「勤務計画」） | `myActivCell()` | Sub | 勤務記号のコピー元→先ペースト処理 |
+|   | **Sheet1**（「勤務計画」） | `Kibou()` | Function | 希望休み検出判定 |
+| ✓ | **Sheet3**（「トイレ掃除」） | `Worksheet_BeforeRightClick()` | Event | 「トイレ掃除」右クリックで消去 |
+| ✓ | **Sheet3**（「トイレ掃除」） | `Worksheet_SelectionChange()` | Event | セル選択変更でコピー＆ペースト制御 |
+| ✓ | **Sheet3**（「トイレ掃除」） | `myActivCell()` | Sub | トイレ掃除記号のコピー＆ペースト処理 |
+| ✓ | **Sheet6**（「社員データ」） | `Worksheet_Change()` | Event | 「社員データ」社員番号入力で照射管理DB照会 |
+| ✓ | **Sheet6**（「社員データ」） | `SyainRead()` | Sub | 社員番号→社員名DB検索 |
+|   | **Sheet6**（「社員データ」） | `XSyainRead()` | Sub | 社員番号→社員名DB検索（別版） |
 | ✓ | **初期設定.bas** | `スタート()` | Sub | 初期設定実行＋Form資格表示＋回覧先読込 |
 | ✓ | **初期設定.bas** | `画面の初期設定()` | Sub | 全シートの保護・表示・クリア処理 |
 | ✓ | **表作成_勤務Read.bas** | `表体裁()` | Sub | 日付変更時の全体表作成処理 |

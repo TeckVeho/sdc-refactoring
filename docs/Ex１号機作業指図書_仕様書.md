@@ -1,10 +1,10 @@
 # Ex１号機作業指図書 仕様書
 
-> **対象ファイル**: `xlms/Ex１号機作業指図書.xlsm`
-> **種別**: Excel マクロ有効ブック (.xlsm)
-> **様式番号**: G1-25
-> **用途**: 1号機照射作業指図書の作成・印刷・照射時間計算・DB登録
-> **本書の目的**: 保守ドキュメントとして、ブックの全構造・VBAロジック・DB連携を網羅的に記述する
+> **ファイル種別**: .xlsm（マクロ付き）
+> **用途**: 1号機照射作業指図書の作成・印刷・照射時間計算・DB登録（様式番号: G1-25）
+> **VBA プロジェクト**: モジュール 22 本（.bas 15 / .cls 7 / .frm 0）
+> **外部連携**: DSN=ricdb（Oracle）
+> **解析日**: 2026-06-29
 
 ---
 
@@ -12,6 +12,15 @@
 ## 凡例（本仕様書の表記ルール）
 
 本仕様書では、保守時の判別を容易にするため、以下の表記ルールを使用します。
+
+### 用語規約
+
+| 用語 | 意味 |
+|---|---|
+| EXメニュー | ExRicSys フォルダに配置される VBA ファイル群（Ex*.xlsm）の総称 |
+| `ExRicSys` | 配置フォルダ名。初出時は〈EXメニュー配置フォルダ〉と注記 |
+
+### 表記規則
 
 | 種別 | 表記 | 例 |
 |---|---|---|
@@ -455,7 +464,13 @@ Excel 標準のデータの入力規則（セル入力時の制約）。VBA `チ
 
 本ブックにユーザーフォームは存在しない。
 
-### 5.3 CommandBar
+### 5.3 ショートカットキー
+
+| マクロ名 | ショートカット | 処理概要 |
+|---|---|---|
+| `全て消去()` | **Ctrl+E** | `画面消去白紙(vbNo)` を実行し全画面を白紙化する |
+
+### 5.4 CommandBar
 
 本ブックに CommandBar のカスタマイズコードは存在しない。
 
@@ -470,9 +485,9 @@ Excel 標準のデータの入力規則（セル入力時の制約）。VBA `チ
 | ✓ | 1 | **ThisWorkbook** | `Workbook_BeforeClose()` | Event | 保存せずに閉じる |
 | ✓ | 2 | **ThisWorkbook** | `Workbook_BeforePrint()` | Event | 印刷前に`長さ記録()`呼出 |
 | ✓ | 3 | **ThisWorkbook** | `Workbook_Open()` | Event | `開始処理()`呼出 |
-| ✓ | 4 | **Sheet1** | `Worksheet_BeforeRightClick()` | Event | ■□トグル・照射条件連動 |
-| ✓ | 5 | **Sheet1** | `Worksheet_Change()` | Event | セル変更時の連動処理 |
-| | 6 | **Sheet1** | `Worksheet_SelectionChange()` | Event | 空（未使用） |
+| ✓ | 4 | **Sheet1**（「指図書」） | `Worksheet_BeforeRightClick()` | Event | ■□トグル・照射条件連動 |
+| ✓ | 5 | **Sheet1**（「指図書」） | `Worksheet_Change()` | Event | セル変更時の連動処理 |
+| | 6 | **Sheet1**（「指図書」） | `Worksheet_SelectionChange()` | Event | 空（未使用） |
 | ✓ | 7 | **開始処理実行** | `開始処理()` | Sub | ブック起動時初期化 |
 | ✓ | 8 | **箱長さ記録** | `長さ記録()` | Sub | 箱長さの DB 記録 |
 | ✓ | 9 | **線量率処理** | `線量率登録()` | Sub | 線量率登録画面へ遷移 |
@@ -809,7 +824,7 @@ Excel 標準のデータの入力規則（セル入力時の制約）。VBA `チ
 - `EnableEvents = True`（デバッグ時にイベントを有効化する用途）
 
 #### `全て消去()` — Sub
-- ショートカット CTRL+e で `画面消去白紙(vbNo)` を実行（全白紙化）
+- ショートカット Ctrl+E で `画面消去白紙(vbNo)` を実行（全白紙化）
 
 ### 6.19 **Module1**（.bas）
 
@@ -840,6 +855,7 @@ Excel 標準のデータの入力規則（セル入力時の制約）。VBA `チ
 |---|---|
 | 接続方式 | ADODB (ActiveX Data Objects) + ODBC |
 | 接続文字列 | `DSN=ricdb;UID=ric;PWD=t6101` |
+| 接続先 | 照射管理システム（Oracle DB） |
 | CursorLocation | adUseClient |
 | トランザクション | BeginTrans / CommitTrans（INSERT/UPDATE/DELETE時） |
 | エラー処理 | On Error Resume Next + MsgBox + Debug.Print |

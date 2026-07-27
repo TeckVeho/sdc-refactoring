@@ -1,10 +1,11 @@
 # Ex報告書未発行検索 仕様書
 
-| 項目 | 内容 |
-|------|------|
-| 対象ファイル | Ex報告書未発行検索.xlsm |
-| 解析日 | 2026-06-29 |
-| 形式 | Excel マクロ有効ブック (.xlsm) |
+> **ファイル種別**: .xlsm（マクロ付き）
+> **用途**: 照射報告書の未発行・Fax未送信案件をDBから検索し、一覧表示・ステータス変更登録を行う業務ツール
+> **VBA プロジェクト**: モジュール 17 本（.bas 13 / .cls 4 / .frm 0）
+> **外部連携**: DSN=ricdb（Oracle）
+> **解析日**: 2026-06-29
+| 用途 | 未発行報告書の検索・一覧表示（EXメニューの1ファイルとして照射管理システムを補完） |
 
 ---
 
@@ -12,6 +13,15 @@
 ## 凡例（本仕様書の表記ルール）
 
 本仕様書では、保守時の判別を容易にするため、以下の表記ルールを使用します。
+
+### 用語規約
+
+| 用語 | 意味 |
+|---|---|
+| EXメニュー | ExRicSys フォルダに配置される VBA ファイル群（Ex*.xlsm）の総称 |
+| `ExRicSys` | 配置フォルダ名。初出時は〈EXメニュー配置フォルダ〉と注記 |
+
+### 表記規則
 
 | 種別 | 表記 | 例 |
 |---|---|---|
@@ -320,8 +330,8 @@ SQL検索条件マスタ・バリデーションリスト・発行情報テー�
 |---|-----------|-------------|---------|------|------|---|
 | 1 | **ThisWorkbook** | `Workbook_BeforeClose()` | Private | Event | 未保存警告→ブック閉じ処理 | ✓ |
 | 2 | **ThisWorkbook** | `Workbook_Open()` | Private | Event | `Bookスタート()` 呼出 | ✓ |
-| 3 | **Sheet1** | `Worksheet_BeforeRightClick()` | Private | Event | Fax/表示設定の右クリックトグル | ✓ |
-| 4 | **Sheet1** | `Worksheet_Change()` | Private | Event | 高さ自動調整（Exit Subで無効化） | |
+| 3 | **Sheet1**（「報告書一覧」） | `Worksheet_BeforeRightClick()` | Private | Event | Fax/表示設定の右クリックトグル | ✓ |
+| 4 | **Sheet1**（「報告書一覧」） | `Worksheet_Change()` | Private | Event | 高さ自動調整（Exit Subで無効化） | |
 | 5 | **データ表示_変更登録** | `報告書データ表示()` | Public | Sub | 検索ボタン：DB検索→一覧表示 | ✓ |
 | 6 | **データ表示_変更登録** | `データ読込()` | Public | Sub | SQL組立→4パターンUNION ALL→シート書出 | ✓ |
 | 7 | **データ表示_変更登録** | `Fax送信()` | Public | Sub | Fax送信状態の初期設定（不/未） | ✓ |
@@ -483,6 +493,7 @@ SQL結果を2次元配列に格納
 | DSN | `ricdb` |
 | UID | `ric` |
 | PWD | `t6101` |
+| 接続先 | 照射管理システム（Oracle DB） |
 | オブジェクト | `ADODB.Connection` / `ADODB.Recordset` |
 | CursorLocation | `adUseClient` |
 

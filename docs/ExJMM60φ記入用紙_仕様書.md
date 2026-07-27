@@ -315,8 +315,8 @@
 |---|---|---|---|---|---|
 | ✓ | ThisWorkbook.cls | `Workbook_BeforeClose()` | Private | Event | 閉じる前に未保存確認 → 保存実行 |
 | ✓ | ThisWorkbook.cls | `Workbook_Open()` | Private | Event | `初期化()` を呼出 |
-| ✓ | Sheet2.cls | `Worksheet_Change()` | Private | Event | セル変更時: 印刷範囲設定/計算パラメータ取得/線量計算 |
-|   | Sheet2.cls | `Worksheet_SelectionChange()` | Private | Event | 厚さの自動コピー（前行から） |
+| ✓ | Sheet2（「測定値」） | `Worksheet_Change()` | Private | Event | セル変更時: 印刷範囲設定/計算パラメータ取得/線量計算 |
+|   | Sheet2（「測定値」） | `Worksheet_SelectionChange()` | Private | Event | 厚さの自動コピー（前行から） |
 | ✓ | 印刷範囲.bas | `印刷範囲の設定()` | Public | Sub | 受付本数から印刷範囲を動的に設定 |
 | ✓ | 計算コード.bas | `有効計算式コード()` | Public | Sub | DB（`keicode`）から有効な計算式コードを取得 |
 | ✓ | 計算コード.bas | `計算パラメータ()` | Public | Sub | 選択計算式コードの係数をDBから取得してシートに展開 |

@@ -411,7 +411,7 @@ CommandBar ボタンは存在しない。
 | ✓ | **ThisWorkbook.cls** | `Workbook_BeforePrint()` | Event | 未入力チェック・線量計種類チェック・印刷範囲設定 |
 |   | **ThisWorkbook.cls** | `未入力チェック()` | Private Function | 再測定者・素子異常・線量計種類・厚さの入力有無判定 |
 |   | **ThisWorkbook.cls** | `線量計種類チェック()` | Private Sub | 線量計の高/低線量用が適切か確認し警告 |
-| ✓ | **Sheet1.cls** | `Worksheet_Change()` | Event | 「報告書」セル変更検知（B7:照射管理番号→データ抽出、G16:線量計種類→計算式取得） |
+| ✓ | **Sheet1**（「報告書」） | `Worksheet_Change()` | Event | 「報告書」セル変更検知（B7:照射管理番号→データ抽出、G16:線量計種類→計算式取得） |
 | ✓ | **初期化.bas** | `画面初期設定()` | Sub | クリア→DB初期データ取得（線量不足線量計・社員・種類）→シート保護 |
 | ✓ | **初期化.bas** | `クリア()` | Sub | 全データ領域のクリアと入力規則削除 |
 | ✓ | **初期化.bas** | `CTRCls()` | Sub | `SenkNo` クリア後に `クリア()` 呼出し |

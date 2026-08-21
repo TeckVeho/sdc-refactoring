@@ -330,6 +330,11 @@
 
 ---
 
+
+### 3.1 データの入力規則
+
+なし。
+
 ## 4. 数式一覧
 
 | シート | 数式件数 | 備考 |
@@ -362,9 +367,9 @@
 
 ## 5. ボタン・マクロ対応
 
-### 5.1 シート上のボタン（Form Control / 描画図形）
-
 > ✓ = DB 更新・画面遷移・計算実行など副作用のある操作を起動するボタン
+
+### 5.1 シート上のボタン（Form Control / 描画図形）
 
 Form Control ボタンは存在しない。ただし以下の描画図形にマクロが割り当てられている。
 
@@ -378,7 +383,7 @@ Form Control ボタンは存在しない。ただし以下の描画図形にマ�
 - セル `$G$16`（`SEnKind`）への入力 → `Worksheet_Change` イベント
 - 印刷操作 → `Workbook_BeforePrint` イベント
 
-### 5.1b ショートカットキー
+### 5.1 b ショートカットキー
 
 | No | マクロ名 | ショートカット | 処理概要 |
 | --- | --- | --- | --- |
@@ -386,11 +391,9 @@ Form Control ボタンは存在しない。ただし以下の描画図形にマ�
 
 ### 5.2 ユーザーフォーム上のボタン（サマリ）
 
-ユーザーフォームは存在しない。
+なし。ユーザーフォームは存在しない。### 5.3 CommandBar に動的追加されるボタン（アドイン風）
 
-### 5.3 CommandBar に動的追加されるボタン（アドイン風）
-
-CommandBar ボタンは存在しない。
+なし。CommandBar ボタンは存在しない。
 
 ---
 
@@ -455,7 +458,7 @@ CommandBar ボタンは存在しない。
 
 | DSN 名 | UID | PWD | 用途 |
 | --- | --- | --- | --- |
-| `ricdb` | ric | t6101 | RIC 照射管理システム DB（本番） |
+| `ricdb` | `ric` | `t6101` | RIC 照射管理システム DB（本番） |
 
 > **備考**: コメントアウトされた代替接続: `UID=rich` / `PWD=t6101`（履歴データ用）
 
@@ -475,11 +478,14 @@ CommandBar ボタンは存在しない。
 
 > 本ファイルでは DB への INSERT / UPDATE / DELETE は実行していない（参照のみ）。
 > ただし `SQL_Execution.bas` には汎用の `SQL_INSERT_UPDATE()` / `SQL_Delete()` プロシージャが定義されており、他ブックから呼び出される可能性がある。
+>
+> **「キー列」の定義**: JOIN 条件または UPDATE/DELETE の WHERE 句で使用される列を示す。
 
 ### 8.3 SQL 一覧
 
+#### 8.3.1 線量不足の照射管理番号リスト取得（`線量不足線量計()` / **データ抽出SQL.bas**）
+
 ```sql
--- 線量不足の照射管理番号リスト取得
 SELECT DISTINCT sk.SYKNO, sk.uno1, sk.uno2, sk.uno3, sk.uno4, sk.uno5
 FROM RIC.SYOUJ2 s, RIC.SYOUKJ3 sk
 WHERE s.UNO = sk.UNO1 AND s.FRICNO = sk.FRICNO1
@@ -489,8 +495,9 @@ WHERE s.UNO = sk.UNO1 AND s.FRICNO = sk.FRICNO1
 ORDER BY sk.sykno
 ```
 
+#### 8.3.2 照射実績データ取得（`線量不足データ抽出()` / **データ抽出SQL.bas**）
+
 ```sql
--- 照射実績データ取得（選択された線量計番号）
 SELECT S.SESDATE, sha.shaname,
        TO_NUMBER(S.SOKUTSN), TO_NUMBER(za.tani), TO_NUMBER(S.PASS),
        S.KEISASK, TO_NUMBER(S.ATUSA), TO_NUMBER(S.JITUNO),
@@ -503,8 +510,9 @@ WHERE s.sokutcd = sha.shano
 ORDER BY s.tuikaflg DESC
 ```
 
+#### 8.3.3 照射計画データ取得（`線量不足データ抽出()` / **データ抽出SQL.bas**）
+
 ```sql
--- 照射計画データ取得（5製品分）
 SELECT TO_NUMBER(UNO1), FRICNO1, LRICNO1, SITEISN1, KAGENSN1, JYOUGSN1, kaisyacd1, KAINAME1,
        TO_NUMBER(UNO2), FRICNO2, LRICNO2, SITEISN2, KAGENSN2, JYOUGSN2, kaisyacd2, KAINAME2,
        TO_NUMBER(UNO3), FRICNO3, LRICNO3, SITEISN3, KAGENSN3, JYOUGSN3, kaisyacd3, KAINAME3,
@@ -514,39 +522,57 @@ FROM RIC.SYOUKJ3
 WHERE SYKNO = '<照射管理番号>' AND SYOUSH_F = '2'
 ```
 
+#### 8.3.4 有資格社員データ取得（`社員データ()` / **データ抽出SQL.bas**）
+
 ```sql
--- 有資格社員データ取得
 SELECT TRIM(SHANAME)
 FROM SHAINMST
 WHERE HSHIKA = '1' AND LSHIKA = '1' AND shano > '1000'
 ORDER BY SHANO
 ```
 
+#### 8.3.5 線量計種類マスタ取得（`線量計種類()` / **データ抽出SQL.bas**）
+
 ```sql
--- 線量計種類マスタ取得
 SELECT sensyu FROM senkind ORDER BY dispno
 ```
 
+#### 8.3.6 計算式コード取得（`計算式コード取得()` / **データ抽出SQL.bas**）
+
 ```sql
--- 計算式コード取得
 SELECT KKODE FROM SENKIND WHERE sensyu = '<選択線量計種類>'
 SELECT KEISASK FROM KEICODE WHERE YFLG1 = '1'
 ```
 
+#### 8.3.7 ブック保存先フォルダ取得（`ブック保存()` / **改定履歴.bas**）
+
 ```sql
--- ブック保存先フォルダ取得
 SELECT folder FROM ExSeihinJ WHERE filename = '<ThisWorkbook.Name>'
 ```
 
 ### 8.4 外部ファイル連携
 
-外部ファイル連携は存在しない。
+| ファイル | パス | ファイル名 | 処理 | 備考 |
+| --- | --- | --- | --- | --- |
+| ブック保存先 | `ExSeihinJ.folder` | `<ThisWorkbook.Name>` | `ActiveWorkbook.SaveAs` | サーバー上の管理フォルダにブックを上書き保存 |
+
+#### ブック保存先詳細
+
+- **出力元プロシージャ**: `ブック保存()` / **改定履歴.bas**
+- **パス生成ロジック**（VBAソースより）:
+  ```
+  mySql = "SELECT folder FROM ExSeihinJ WHERE filename='" & ThisWorkbook.Name & "'"
+  ActiveWorkbook.SaveAs Filename:=myData(0, 0) & ThisWorkbook.Name
+  ```
+- **出力例**: `<DBから取得したフォルダパス>\ExRIC3線量不足報告書.xlsm`
+- **フォルダ不在時**: エラーハンドリングなし（`On Error Resume Next` で例外を吸収し「保存しませんでした。」を表示）
 
 ---
 
 ## 9. データフロー
 
 各フローは「起点 → 処理 → 結果」の粒度で記述する。
+
 ### 9.1 ブック起動フロー
 
 | No | 起点 | 処理 | 結果 |
@@ -681,15 +707,13 @@ SELECT folder FROM ExSeihinJ WHERE filename = '<ThisWorkbook.Name>'
 ## 10. セキュリティ注意事項
 
 
-
 | No | カテゴリ | 内容 | リスク |
 | --- | --- | --- | --- |
-| 1 | DB認証情報 | 接続文字列がVBAソース内にハードコード（DSN=ricdb;UID=ric;PWD=t6101） | 中：VBAエディタで閲覧可能 |
-| 2 | AutoExec | Workbook_Open / BeforeClose 等が自動実行される | 低：意図通りの起動・終了処理 |
-| 3 | ファイル操作 / DB接続 | DB 接続の Open メソッド使用 | 低：DB 接続またはファイルオープン |
-| 4 | Suspicious | ブックの上書き保存を実行 | 低：olevba 検出項目 |
+| 1 | 認証情報ハードコード | DSN=`ricdb`, UID=`ric`, PWD=`t6101` が VBA ソースに平文記載 | 中：VBAエディタで閲覧可能 |
+| 2 | ファイル操作 | ブックの上書き保存を実行 | 中：保存先の上書き |
 
 ---
+
 ## スコープ外（本仕様書に含まないもの）
 
 - セル書式（色・罫線・フォント）

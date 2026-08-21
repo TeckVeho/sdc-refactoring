@@ -100,7 +100,14 @@ Ex出荷方法報告書発行登録.xlsm
 
 | ✓ | No | シート名 | 最大行 | 最大列 | 保存時 Visible | VBA による動的切替 |
 | --- | --- | --- | --- | --- | --- | --- |
-| ✓ | 1 | 「業者一覧」 | 1004 | 17 (Q) | visible | — |
+| ✓ | 1 | 業者一覧 | 1004 | 17 (Q) | visible | — |
+
+
+### 1.2 ユーザーフォーム一覧
+
+> ✓ = ユーザー入力を受け付ける、または業務フローの起点となるフォーム
+
+なし。
 
 ### 1.3 VBA モジュール一覧
 
@@ -127,7 +134,7 @@ Ex出荷方法報告書発行登録.xlsm
 
 | No | シート | VBA による非表示化 | 表示するタイミング | 非表示にするタイミング | 制御プロシージャ |
 | --- | --- | --- | --- | --- | --- |
-| 1 | 「業者一覧」 | — | — | — | — |
+| 1 | 業者一覧 | — | — | — | — |
 
 > 以下の各シートのレイアウト構造表における ✓ = VBA から `Range()` で代入または参照され、業務ロジックに直結するセル
 
@@ -221,9 +228,9 @@ Ex出荷方法報告書発行登録.xlsm
 
 | シート | セル | 種別 | 制約 | 用途 |
 | --- | --- | --- | --- | --- |
-| 「業者一覧」 | `B5:D700` | 整数 | =99999 |  |
-| 「業者一覧」 | `E5:E1004` | リスト | リスト: `$N$5:$N$13` |  |
-| 「業者一覧」 | `G5:G1004` | リスト | リスト: `$O$5:$O$9` |  |
+| 業者一覧 | `B5:D700` | 整数 | =99999 |  |
+| 業者一覧 | `E5:E1004` | リスト | リスト: `$N$5:$N$13` |  |
+| 業者一覧 | `G5:G1004` | リスト | リスト: `$O$5:$O$9` |  |
 
 
 ---
@@ -234,7 +241,7 @@ Ex出荷方法報告書発行登録.xlsm
 
 | シート | 数式件数 | 備考 |
 | --- | --- | --- |
-| 「業者一覧」 | 1000 | I5:I1004 に同一パターンの VLOOKUP 数式 |
+| 業者一覧 | 1000 | I5:I1004 に同一パターンの VLOOKUP 数式 |
 
 ### 4.1 業者一覧
 
@@ -249,15 +256,15 @@ Ex出荷方法報告書発行登録.xlsm
 
 ## 5. ボタン・マクロ対応
 
-### 5.1 シート上のボタン（Form Control）
-
 > ✓ = DB 更新・画面遷移・計算実行など副作用のある操作を起動するボタン
+
+### 5.1 シート上のボタン（Form Control）
 
 | ✓ | No | シート | ボタンラベル | 割り当てマクロ | 動作概要 |
 | --- | --- | --- | --- | --- | --- |
-| ✓ | 1 | 「業者一覧」 | 出荷方法/報告書発行種別表示 | `業者名と引取抽出()` | DB（`tokumst` + `ExSeihinJ` + `sehmst`）から最新データを取得してシートに再描画 |
-| ✓ | 2 | 「業者一覧」 | 変更を登録する | `引取報告書登録()` | E列またはG列が変更された行のみ DB（`ExSeihinJ`）に `hikitori` / `housyube` を UPDATE/INSERT |
-|  | 3 | 「業者一覧」 | 終了 | `Bookを閉じる()` | ブックを保存せずに閉じる |
+| ✓ | 1 | 業者一覧 | 出荷方法/報告書発行種別表示 | `業者名と引取抽出()` | DB（`tokumst` + `ExSeihinJ` + `sehmst`）から最新データを取得してシートに再描画 |
+| ✓ | 2 | 業者一覧 | 変更を登録する | `引取報告書登録()` | E列またはG列が変更された行のみ DB（`ExSeihinJ`）に `hikitori` / `housyube` を UPDATE/INSERT |
+|  | 3 | 業者一覧 | 終了 | `Bookを閉じる()` | ブックを保存せずに閉じる |
 
 ### 5.2 ショートカットキー
 
@@ -296,6 +303,15 @@ Ex出荷方法報告書発行登録.xlsm
 > - `SQL_Delete()` / `Set_Array()` — 共通ライブラリ（`SQL_Execution.bas`）の一部。他の EXメニューファイルでは使用される可能性があるが、本ファイル内では不使用
 
 ---
+
+
+### 5.4 CommandBar に動的追加されるボタン
+
+なし。
+
+### 5.5 ユーザーフォーム上のボタン（サマリ）
+
+なし。
 
 ## 6. VBA モジュール仕様
 
@@ -596,7 +612,7 @@ ADODB による Oracle DB 接続・SQL 実行の共通ライブラリモジュ�
 
 ## 7. ユーザーフォーム仕様
 
-該当なし（本ファイルにユーザーフォームは存在しない）。
+なし。（本ファイルにユーザーフォームは存在しない）。
 
 ---
 
@@ -606,7 +622,7 @@ ADODB による Oracle DB 接続・SQL 実行の共通ライブラリモジュ�
 
 | DSN 名 | UID | PWD | 用途 |
 | --- | --- | --- | --- |
-| `ricdb` | ric | t6101 | Oracle DB 接続（照射管理システム） |
+| `ricdb` | `ric` | `t6101` | Oracle DB 接続（照射管理システム） |
 
 ### 8.2 テーブル一覧（参照/更新区分付き）
 
@@ -618,46 +634,62 @@ ADODB による Oracle DB 接続・SQL 実行の共通ライブラリモジュ�
 |  | 2 | `tokumst` | 参照 | 得意先マスタ | `kaisyacd` | `kaisyacd`, `kairname`, `coname` |
 |  | 3 | `sehmst` | 参照 | 製品仕様台帳（報告書要不要フラグ） | `kaisyacd` | `kaisyacd`, `syouho`（MAX集計） |
 
+> **「キー列」の定義**: JOIN 条件または UPDATE/DELETE の WHERE 句で使用される列を示す。
+
 ### 8.3 SQL 一覧
 
+#### 8.3.1 業者一覧取得（`業者名と引取抽出()` / **デーた抽出.bas**）
+
 ```sql
--- 業者一覧取得（tokumst + ExSeihinJ の外部結合）
--- 呼出元: 業者名と引取抽出() / デーた抽出.bas
 SELECT t.kaisyacd, t.kairname, t.coname,
        s.hikitori, s.hikitori, s.housyube, s.housyube
 FROM tokumst t, ExSeihinJ s
 WHERE t.kaisyacd = s.kaisyacd(+)
   AND t.kaisyacd < '2000'
 ORDER BY t.kaisyacd
+```
 
--- 報告書要不要フラグ集計（sehmst）
--- 呼出元: 業者名と引取抽出() / デーた抽出.bas
+#### 8.3.2 報告書要不要フラグ集計（`業者名と引取抽出()` / **デーた抽出.bas**）
+
+```sql
 SELECT kaisyacd, MAX(syouho)
 FROM sehmst
 GROUP BY kaisyacd
 ORDER BY kaisyacd
+```
 
--- 件数チェック（INSERT/UPDATE 判定用）
--- 呼出元: SQL_INSERT_UPDATE() / SQL_Execution.bas
+#### 8.3.3 件数チェック（`SQL_INSERT_UPDATE()` / **SQL_Execution.bas**）
+
+```sql
 SELECT COUNT(*) FROM ExSeihinJ WHERE kaisyacd = '<kaisyacd>'
+```
 
--- 出荷方法・報告書発行種別の UPDATE
--- 呼出元: SQL_INSERT_UPDATE() / SQL_Execution.bas（引取報告書登録() 経由）
+#### 8.3.4 出荷方法・報告書発行種別の UPDATE（`引取報告書登録()` / **デーた抽出.bas**）
+
+```sql
 UPDATE ExSeihinJ
 SET hikitori = '<hikitori>', housyube = '<housyube>'
 WHERE kaisyacd = '<kaisyacd>'
+```
 
--- 出荷方法・報告書発行種別の INSERT（未登録時）
--- 呼出元: SQL_INSERT_UPDATE() / SQL_Execution.bas（引取報告書登録() 経由）
+#### 8.3.5 出荷方法・報告書発行種別の INSERT（`引取報告書登録()` / **デーた抽出.bas**）
+
+```sql
 INSERT INTO ExSeihinJ (kaisyacd, hikitori, housyube)
 VALUES ('<kaisyacd>', '<hikitori>', '<housyube>')
 ```
 
 ---
 
+
+### 8.4 外部ファイル連携
+
+なし。
+
 ## 9. データフロー
 
 各フローは「起点 → 処理 → 結果」の粒度で記述する。
+
 ### 9.1 起動・データ表示フロー
 
 | No | 起点 | 処理 | 結果 |
@@ -751,18 +783,13 @@ VALUES ('<kaisyacd>', '<hikitori>', '<housyube>')
 ## 10. セキュリティ注意事項
 
 
-
 | No | カテゴリ | 内容 | リスク |
 | --- | --- | --- | --- |
-| 1 | DB認証情報 | 接続文字列がVBAソース内にハードコード（DSN=ricdb;UID=ric;PWD=t6101） | 中：VBAエディタで閲覧可能 |
-| 2 | AutoExec | Workbook_Open / BeforeClose 等が自動実行される | 低：意図通りの起動・終了処理 |
-| 3 | 環境変数 | **画面操作1.bas** で `Environ("COMPUTERNAME")` を使用（PC名取得） | 低：環境情報の読取り |
-| 4 | ファイル操作 / DB接続 | ファイルオープン操作の可能性（**登録.bas** の定数 `mpFnameSyu` に関連、ただし実際のファイルI/Oコードは未使用） | 低：DB 接続またはファイルオープン |
-| 5 | Suspicious | **画面操作1.bas** で `Scripting.FileSystemObject` を動的生成 | 低：olevba 検出項目 |
-| 6 | Suspicious | **画面操作1.bas** でリボン操作に Excel 4 マクロを使用 | 低：olevba 検出項目 |
-| 7 | Suspicious | アプリケーションウィンドウ列挙の可能性 | 低：olevba 検出項目 |
+| 1 | 認証情報ハードコード | DSN=`ricdb`, UID=`ric`, PWD=`t6101` が VBA ソースに平文記載 | 中：VBAエディタで閲覧可能 |
+| 2 | 環境変数 | **画面操作1.bas** で `Environ("COMPUTERNAME")` を使用 | 低：環境情報の読取り |
 
 ---
+
 ## スコープ外（本仕様書に含まないもの）
 
 - セル書式（色・罫線・フォント）

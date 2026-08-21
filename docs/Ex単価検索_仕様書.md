@@ -88,7 +88,7 @@
 
 ### 1.2 ユーザーフォーム一覧
 
-該当なし。本ファイルにユーザーフォームは含まれない。
+なし。本ファイルにユーザーフォームは含まれない。
 
 ### 1.3 VBA モジュール一覧
 
@@ -242,13 +242,13 @@
 
 | シート | セル | 種別 | 制約 | 用途 |
 | --- | --- | --- | --- | --- |
-| 「Main」 | `B5` | テキスト長 | 10〜11 |  |
-| 「Main」 | `J3` | カスタム | <=LENB(J3)<=50 |  |
-| 「Main」 | `C8` | リスト | リスト: `"する,しない"` |  |
-| 「Main」 | `B7` | リスト | リスト: `$T$9:$T$10` |  |
-| 「Main」 | `M8` | リスト | リスト: `Ryaku` |  |
-| 「Main」 | `F5` | リスト | リスト: `TanniList` |  |
-| 「Main」 | `H3` | リスト | リスト: `FolderName` |  |
+| Main | `B5` | テキスト長 | 10〜11 |  |
+| Main | `J3` | カスタム | <=LENB(J3)<=50 |  |
+| Main | `C8` | リスト | リスト: `"する,しない"` |  |
+| Main | `B7` | リスト | リスト: `$T$9:$T$10` |  |
+| Main | `M8` | リスト | リスト: `Ryaku` |  |
+| Main | `F5` | リスト | リスト: `TanniList` |  |
+| Main | `H3` | リスト | リスト: `FolderName` |  |
 
 
 ---
@@ -273,9 +273,9 @@
 
 ## 5. ボタン・マクロ対応
 
-### 5.1 シート上のボタン（Form Control）
-
 > ✓ = DB 更新・画面遷移・計算実行など副作用のある操作を起動するボタン
+
+### 5.1 シート上のボタン（Form Control）
 
 | ✓ | No | シート | ボタンラベル | 割り当てマクロ | 動作概要 |
 | --- | --- | --- | --- | --- | --- |
@@ -294,11 +294,11 @@
 
 ### 5.3 ユーザーフォーム上のボタン
 
-該当なし。
+なし。
 
 ### 5.4 CommandBar に動的追加されるボタン
 
-該当なし。`画面設定()` で既存CommandBarの表示/非表示を制御するのみ。
+なし。`画面設定()` で既存CommandBarの表示/非表示を制御するのみ。
 
 ---
 
@@ -360,7 +360,7 @@
 
 ## 7. ユーザーフォーム仕様
 
-該当なし。本ファイルにユーザーフォームは含まれない。
+なし。本ファイルにユーザーフォームは含まれない。
 
 ---
 
@@ -370,7 +370,7 @@
 
 | DSN 名 | UID | PWD | 用途 |
 | --- | --- | --- | --- |
-| `ricdb` | ric | t6101 | 照射管理システムDB接続 |
+| `ricdb` | `ric` | `t6101` | 照射管理システムDB接続 |
 
 > **DB サーバー IP**: DSN（ricdb）経由で接続。IPアドレスはDSN設定に依存。
 
@@ -387,24 +387,29 @@
 |  | 5 | `sehmst` | 参照 | 製品マスタ（製品名・寸法・線量等） | `kaisyacd` + `sehncd` | 参照: `siteisn`, `syouso`, `pass`, `haba`, `takasa`, `nagasa`, `jyury`, `incnt`, `seiname` |
 |  | 6 | `shainmst` | 参照 | 社員マスタ（認証・社員名取得） | `shano` | 参照: `shaname`, `kshika` |
 
+> **「キー列」の定義**: JOIN 条件または UPDATE/DELETE の WHERE 句で使用される列を示す。
+
 ### 8.3 SQL 一覧
 
+#### 8.3.1 受付番号による在庫検索（`受付番号読込表示()` / **データベースR.bas**）
+
 ```sql
--- 受付番号による在庫検索（受付番号読込表示）
 SELECT Uno, kaisyacd, sehncd, kainame
 FROM zaiko_V
 WHERE uno LIKE '%<受付番号>' AND syouso<>'4' AND nyukabi>'<NyukabiBef>'
 ```
 
+#### 8.3.2 会社情報・価格ファイル取得（`価格ファイル表示()` / **データベースR.bas**）
+
 ```sql
--- 会社情報・価格ファイル取得（価格ファイル表示）
 SELECT t.coname, e.folder, e.filename, e.kaibikou, e.toudate, e.touname
 FROM ExSeihinJ e, tokumst t
 WHERE e.kaisyacd(+) = t.kaisyacd AND t.kaisyacd = '<会社コード>'
 ```
 
+#### 8.3.3 製品情報取得（`製品読込表示()` / **データベースR.bas**）
+
 ```sql
--- 製品情報取得（製品読込表示）
 SELECT e.tanka, e.tani, e.toudate, s.siteisn, s.syouso, s.pass, s.haba,
        s.takasa, s.nagasa, s.jyury, s.incnt, s.seiname, e.keijyou
 FROM ExSeihinZ e, sehmst s
@@ -412,36 +417,37 @@ WHERE s.kaisyacd = e.kaisyacd(+) AND s.sehncd = e.sehncd(+)
   AND s.kaisyacd = '<会社コード>' AND s.sehncd = '<製品コード>'
 ```
 
+#### 8.3.4 会社コード略称検索（`会社コード表示()` / **会社コード検索.bas**）
+
 ```sql
--- 会社コード略称検索（会社コード表示）
 SELECT kaisyacd, RTRIM(TRANSLATE(coname, '　', ' '))
 FROM tokumst
 WHERE kairname LIKE '<略称>%' AND kaisyacd < '2000'
 ORDER BY kairname
 ```
 
+#### 8.3.5 社員認証（`Start_GO()` / **開始処理.bas**）
+
 ```sql
--- 社員認証（Start_GO）
 SELECT TRIM(REPLACE(shaname, '　', ' '))
 FROM shainmst
 WHERE shano = '<社員番号>' AND kshika = '1'
 ```
 
+#### 8.3.6 単価登録（`単価登録()` / **単価_ファイル登録処理.bas**）
+
 ```sql
--- 単価登録（SQL_INSERT_UPDATE 経由）
--- 既存チェック
 SELECT COUNT(*) FROM ExSeihinZ WHERE kaisyacd='<会社>' AND sehncd='<製品>'
--- INSERT（新規）
 INSERT INTO ExSeihinZ (kaisyacd, sehncd, tanka, tani, keijyou, toudate, touname)
 VALUES ('<会社>', '<製品>', <単価>, '<単位>', '<備考>', '<日付>', '<社員名>')
--- UPDATE（既存）
 UPDATE ExSeihinZ SET tanka=<単価>, tani='<単位>', keijyou='<備考>',
        toudate='<日付>', touname='<社員名>'
 WHERE kaisyacd='<会社>' AND sehncd='<製品>'
 ```
 
+#### 8.3.7 ファイル登録（`単価_フォルダーファイル名更新()` / **単価_ファイル登録処理.bas**）
+
 ```sql
--- ファイル登録（SQL_INSERT_UPDATE 経由）
 -- INSERT/UPDATE ExSeihinJ
 -- キー: kaisyacd
 -- 列: kaisyacd, folder, filename, kaibikou, toudate, touname
@@ -483,6 +489,7 @@ WHERE kaisyacd='<会社>' AND sehncd='<製品>'
 ## 9. データフロー
 
 各フローは「起点 → 処理 → 結果」の粒度で記述する。
+
 ### 9.1 起動フロー
 
 | No | 起点 | 処理 | 結果 |
@@ -630,19 +637,14 @@ WHERE kaisyacd='<会社>' AND sehncd='<製品>'
 ## 10. セキュリティ注意事項
 
 
-
 | No | カテゴリ | 内容 | リスク |
 | --- | --- | --- | --- |
-| 1 | DB認証情報 | 接続文字列がVBAソース内にハードコード（DSN=ricdb;UID=ric;PWD=t6101） | 中：VBAエディタで閲覧可能 |
-| 2 | AutoExec | Workbook_Open / BeforeClose 等が自動実行される | 低：意図通りの起動・終了処理 |
-| 3 | ファイル操作 / DB接続 | ファイルを開く可能性あり（価格表Path.txt読込） | 低：DB 接続またはファイルオープン |
-| 4 | Suspicious | 実行ファイルまたはシステムコマンドの実行可能性 | 低：olevba 検出項目 |
-| 5 | Suspicious | 外部プログラム実行（価格表ファイル表示に使用） | 低：olevba 検出項目 |
-| 6 | Suspicious | 外部ファイル実行（Wscript.Shell.Run） | 低：olevba 検出項目 |
-| 7 | Suspicious | OLEオブジェクト生成（Wscript.Shell生成） | 低：olevba 検出項目 |
-| 8 | Suspicious | アプリケーションウィンドウ列挙の可能性 | 低：olevba 検出項目 |
+| 1 | 認証情報ハードコード | DSN=`ricdb`, UID=`ric`, PWD=`t6101` が VBA ソースに平文記載 | 中：VBAエディタで閲覧可能 |
+| 2 | ファイル操作 | `価格表Path.txt` を読込 | 中：パス改ざん時の読込先変更 |
+| 3 | 外部プログラム実行 | `Wscript.Shell.Run` で価格表ファイルを表示 | 中：外部プログラムの起動 |
 
 ---
+
 ## スコープ外（本仕様書に含まないもの）
 
 - セル書式（色・罫線・フォント）

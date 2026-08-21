@@ -83,11 +83,14 @@
 
 ### 1.1 シート一覧
 
-| ✓ | No | シート名 | codeName | 用途 |
-| --- | --- | --- | --- | --- |
-| ✓ | 1 | 「積替品」 | Sheet5 | 積替え品一覧の表示・印刷シート |
-| ✓ | 2 | 「積替TB」 | Sheet4 | 積替え製品マスタテーブル（会社・製品・積替えフラグ管理） |
-|  | 3 | 「WorkTB」 | Sheet6 | DB抽出データの一時格納領域 |
+> ✓ = ユーザーが直接操作する、または VBA が動的に表示/非表示を切り替えるシート
+
+
+| ✓ | No | シート名 | 最大行 | 最大列 | 保存時 Visible | VBA による動的切替 |
+| --- | --- | --- | --- | --- | --- | --- |
+| ✓ | 1 | 積替品 | 235 | 15 | visible | — |
+| ✓ | 2 | 積替TB | 10000 | 12 | visible | — |
+|  | 3 | WorkTB | 133 | 9 | visible | — |
 
 ### 1.2 ユーザーフォーム一覧
 
@@ -95,20 +98,23 @@
 
 ### 1.3 VBA モジュール一覧
 
-| ✓ | No | モジュール名 | 種別 | 行数 | 用途 |
+> ✓ = ユーザー操作の起点 / DB I/O を含む / 他モジュールから呼び出される / コード行数上位 25%
+
+
+| ✓ | No | モジュール | 種別 | プロシージャ数 | 主な役割 |
 | --- | --- | --- | --- | --- | --- |
-| ✓ | 1 | **ThisWorkbook** | cls | 15 | ブック開閉時イベント（初期化・画面クリア・積替品抽出呼び出し） |
-| ✓ | 2 | **SQL_Execution** | bas | 170 | DB接続・SQL実行・シート転記・配列格納の汎用ルーチン |
-| ✓ | 3 | **Ex画面クリア** | bas | 12 | 名前付き範囲のクリア・印刷範囲初期化・シート遷移 |
-| ✓ | 4 | **Ex詰替品更新** | bas | 50 | 積替TB上の変更差分をDBテーブル`ExSeihinZ`へINSERT/UPDATE |
-| ✓ | 5 | **Ex積替え品抽出** | bas | 132 | DBから積替え対象品を抽出しWorkTB経由で積替品シートに加工表示 |
-| ✓ | 6 | **Ex積替品表示** | bas | 30 | 積替TBシートに全製品マスタ＋積替えフラグを表示 |
-|  | 7 | **ExFunction** | bas | 15 | 日付フォーマット変換ユーティリティ |
-|  | 8 | **印刷範囲** | bas | 12 | 積替品シートの印刷範囲設定 |
-|  | 9 | **終了処理** | bas | 10 | ブックを閉じる（上書きなし） |
-|  | 10 | **Sheet4** | cls | 1 | 「積替TB」シートモジュール（コードなし） |
-|  | 11 | **Sheet5** | cls | 1 | 「積替品」シートモジュール（コードなし） |
-|  | 12 | **Sheet6** | cls | 1 | 「WorkTB」シートモジュール（コードなし） |
+| ✓ | 1 | **ThisWorkbook** | .cls | 2 | ブック開閉時イベント（初期化・画面クリア・積替品抽出呼び出し） |
+| ✓ | 2 | **SQL_Execution** | .bas | 6 | DB接続・SQL実行・シート転記・配列格納の汎用ルーチン |
+| ✓ | 3 | **Ex画面クリア** | .bas | 2 | 名前付き範囲のクリア・印刷範囲初期化・シート遷移 |
+| ✓ | 4 | **Ex詰替品更新** | .bas | 1 | 積替TB上の変更差分をDBテーブル`ExSeihinZ`へINSERT/UPDATE |
+| ✓ | 5 | **Ex積替え品抽出** | .bas | 2 | DBから積替え対象品を抽出しWorkTB経由で積替品シートに加工表示 |
+| ✓ | 6 | **Ex積替品表示** | .bas | 1 | 積替TBシートに全製品マスタ＋積替えフラグを表示 |
+|  | 7 | **ExFunction** | .bas | 1 | 日付フォーマット変換ユーティリティ |
+|  | 8 | **印刷範囲** | .bas | 1 | 積替品シートの印刷範囲設定 |
+|  | 9 | **終了処理** | .bas | 1 | ブックを閉じる（上書きなし） |
+|  | 10 | **Sheet4** | .cls | 0 | 「積替TB」シートモジュール（コードなし） |
+|  | 11 | **Sheet5** | .cls | 0 | 「積替品」シートモジュール（コードなし） |
+|  | 12 | **Sheet6** | .cls | 0 | 「WorkTB」シートモジュール（コードなし） |
 
 ---
 
@@ -116,21 +122,28 @@
 
 ### 2.0 シート可視性一覧
 
-| No | シート名 | 状態 |
-| --- | --- | --- |
-| 1 | 「積替品」 | 表示 |
-| 2 | 「積替TB」 | 表示 |
-| 3 | 「WorkTB」 | 表示 |
+
+| No | シート | VBA による非表示化 | 表示するタイミング | 非表示にするタイミング | 制御プロシージャ |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 積替品 | — | — | — | — |
+| 2 | 積替TB | — | — | — | — |
+| 3 | WorkTB | — | — | — | — |
 
 
-### 2.0b 非表示行・列一覧
+> 以下の各シートのレイアウト構造表における ✓ = VBA から `Range()` で代入または参照され、業務ロジックに直結するセル
+
+### 2.0 b 非表示行・列一覧
 
 | シート | 非表示行 | 非表示列 |
 | --- | --- | --- |
-| 「積替品」 | 4 | C |
-| 「積替TB」 | 2〜3 | B〜C, J |
+| 積替品 | 4 | C |
+| 積替TB | 2〜3 | B〜C, J |
 
-### 2.1 「積替品」シート
+### 2.1 積替品
+
+#### 非表示行・列
+
+なし。
 
 | 用途 | 積替え品の照射状況一覧表示・印刷用シート |
 | --- | --- |
@@ -171,7 +184,11 @@
 | --- | --- | --- | --- |
 | ✓ | 1 | `B6:M235` | 積替え品一覧データ（名前付き範囲`TumikaeTB`） |
 
-### 2.2 「積替TB」シート
+### 2.2 積替TB
+
+#### 非表示行・列
+
+なし。
 
 | 用途 | 積替え対象製品マスタの表示・編集シート |
 | --- | --- |
@@ -211,7 +228,11 @@
 | `I3` | `=IF(ISERROR(VLOOKUP(#REF!,TumiFlg,2,FALSE)),"",VLOOKUP(#REF!,TumiFlg,2,FALSE))` | ※参照エラー状態（`TumiFlg`は未定義） |
 | `J3` | `=IF(ISERROR(VLOOKUP(#REF!,TumiFlg,2,FALSE)),"",VLOOKUP(#REF!,TumiFlg,2,FALSE))` | 同上 |
 
-### 2.3 「WorkTB」シート
+### 2.3 WorkTB
+
+#### 非表示行・列
+
+なし。
 
 | 用途 | DB抽出結果の一時格納ワークシート |
 | --- | --- |
@@ -230,6 +251,8 @@ VBAからは名前付き範囲`Work`(`A1:H201`)および`Wtb`(`A1:H250`)で参�
 
 ## 3. 名前付き範囲一覧
 
+> ✓ = VBA から `Range()` で代入または参照され、業務ロジックに直結する名前付き範囲
+
 | ✓ | No | 名前 | 参照先 | 業務的意味 |
 | --- | --- | --- | --- | --- |
 |  | 1 | `DebugFlg` | 積替品!$A$1 | デバッグフラグ |
@@ -247,10 +270,10 @@ VBAからは名前付き範囲`Work`(`A1:H201`)および`Wtb`(`A1:H250`)で参�
 
 | シート | セル | 種別 | 制約 | 用途 |
 | --- | --- | --- | --- | --- |
-| 「積替品」 | `A2` | 整数 | =999 |  |
-| 「積替品」 | `F3` | 整数 | 1〜230 |  |
-| 「積替TB」 | `I6:I1005` | 整数 | =1 |  |
-| 「積替TB」 | `D6:H1005` | 整数 | =9999 |  |
+| 積替品 | `A2` | 整数 | =999 |  |
+| 積替品 | `F3` | 整数 | 1〜230 |  |
+| 積替TB | `I6:I1005` | 整数 | =1 |  |
+| 積替TB | `D6:H1005` | 整数 | =9999 |  |
 
 
 ---
@@ -259,46 +282,48 @@ VBAからは名前付き範囲`Work`(`A1:H201`)および`Wtb`(`A1:H250`)で参�
 
 ## 4. 数式一覧
 
-| No | シート | セル | 数式 | 業務的意味 |
+| No | シート | セル | 数式 | 説明 |
 | --- | --- | --- | --- | --- |
-| 1 | 「積替品」 | `I3` | `=MAX(B6:B235)` | 一覧の最大No表示 |
-| 2 | 「積替品」 | `L3` | `=NOW()` | 現在日時の表示 |
-| 3 | 「積替TB」 | `D3` | `=COUNTA(SeihinnSuu)` | 登録製品件数のカウント |
-| 4 | 「積替TB」 | `I3` | `=IF(ISERROR(VLOOKUP(#REF!,TumiFlg,2,FALSE)),"",VLOOKUP(#REF!,TumiFlg,2,FALSE))` | 参照エラー状態 |
-| 5 | 「積替TB」 | `J3` | `=IF(ISERROR(VLOOKUP(#REF!,TumiFlg,2,FALSE)),"",VLOOKUP(#REF!,TumiFlg,2,FALSE))` | 参照エラー状態 |
+| 1 | 積替品 | `I3` | `=MAX(B6:B235)` | 一覧の最大No表示 |
+| 2 | 積替品 | `L3` | `=NOW()` | 現在日時の表示 |
+| 3 | 積替TB | `D3` | `=COUNTA(SeihinnSuu)` | 登録製品件数のカウント |
+| 4 | 積替TB | `I3` | `=IF(ISERROR(VLOOKUP(#REF!,TumiFlg,2,FALSE)),"",VLOOKUP(#REF!,TumiFlg,2,FALSE))` | 参照エラー状態 |
+| 5 | 積替TB | `J3` | `=IF(ISERROR(VLOOKUP(#REF!,TumiFlg,2,FALSE)),"",VLOOKUP(#REF!,TumiFlg,2,FALSE))` | 参照エラー状態 |
 
 ---
 
 ## 5. ボタン・マクロ対応
 
+> ✓ = DB 更新・画面遷移・計算実行など副作用のある操作を起動するボタン
+
 ### 5.1 シート上のボタン
 
-#### 「積替品」シート（vmlDrawing1.vml）
+#### 積替品（vmlDrawing1.vml）
 
-| ✓ | No | ボタンテキスト | 呼び出しマクロ | 機能 |
-| --- | --- | --- | --- | --- |
-| ✓ | 1 | 現状の積替品の照射状況 | `TumikaeHinn()` | DBから積替え対象品を抽出し一覧表示 |
-| ✓ | 2 | 積替する製品の登録 | `積替製品TB表示()` | 積替TBシートに製品マスタを表示し遷移 |
-|  | 3 | 画面を閉じる | `Bookを閉じる()` | ブックを保存せず閉じる |
-|  | 4 | ←印刷範囲設定は…（描画図形） | `InsatuHanni()` | 名前付き範囲 `Innsatu` の値に基づき印刷範囲を `$B$6:$M$n` に設定（デフォルト32行） |
+| ✓ | No | シート | ボタンラベル | 割り当てマクロ | 動作概要 |
+| --- | --- | --- | --- | --- | --- |
+| ✓ | 1 | 積替品 | 現状の積替品の照射状況 | `TumikaeHinn()` | DBから積替え対象品を抽出し一覧表示 |
+| ✓ | 2 | 積替品 | 積替する製品の登録 | `積替製品TB表示()` | 積替TBシートに製品マスタを表示し遷移 |
+|  | 3 | 積替品 | 画面を閉じる | `Bookを閉じる()` | ブックを保存せず閉じる |
+|  | 4 | 積替品 | ←印刷範囲設定は…（描画図形） | `InsatuHanni()` | 名前付き範囲 `Innsatu` の値に基づき印刷範囲を `$B$6:$M$n` に設定（デフォルト32行） |
 
-#### 「積替TB」シート（vmlDrawing2.vml）
+#### 積替TB（vmlDrawing2.vml）
 
-| ✓ | No | ボタンテキスト | 呼び出しマクロ | 機能 |
-| --- | --- | --- | --- | --- |
-|  | 1 | 戻る | `Modori()` | 積替品シートに戻る |
-| ✓ | 2 | 登録内容更新 | `詰替品データ更新()` | 変更行をDBへINSERT/UPDATE |
-| ✓ | 3 | データ表示製品検索 | `積替製品TB表示()` | 製品マスタを再取得表示 |
+| ✓ | No | シート | ボタンラベル | 割り当てマクロ | 動作概要 |
+| --- | --- | --- | --- | --- | --- |
+|  | 1 | 積替TB | 戻る | `Modori()` | 積替品シートに戻る |
+| ✓ | 2 | 積替TB | 登録内容更新 | `詰替品データ更新()` | 変更行をDBへINSERT/UPDATE |
+| ✓ | 3 | 積替TB | データ表示製品検索 | `積替製品TB表示()` | 製品マスタを再取得表示 |
 
-### 5.2 フォーム上のボタン
-
-なし
-
-### 5.3 ショートカットキー
+### 5.2 ショートカットキー
 
 | No | マクロ名 | ショートカット | 処理概要 |
 | --- | --- | --- | --- |
 | 1 | `画面クリア3詰替()` | **Ctrl+E** | 画面データクリア・初期状態復帰 |
+
+### 5.3 ユーザーフォーム上のボタン（サマリ）
+
+なし。
 
 ### 5.4 CommandBar
 
@@ -310,25 +335,28 @@ VBAからは名前付き範囲`Work`(`A1:H201`)および`Wtb`(`A1:H250`)で参�
 
 ### 6.0 全プロシージャ一覧
 
-| ✓ | No | モジュール | プロシージャ | スコープ | 種別 | 場所 |
+> ✓ = ユーザー操作の起点（Click イベント等） / DB I/O を実行 / 他モジュールから呼び出される Public
+
+
+| ✓ | No | モジュール | プロシージャ | スコープ | 種別 | 概要 |
 | --- | --- | --- | --- | --- | --- | --- |
-|  | 1 | **ThisWorkbook** | `Workbook_BeforeClose()` | Private | Event | 📄VBA内部処理 |
-| ✓ | 2 | **ThisWorkbook** | `Workbook_Open()` | Private | Event | 📄VBA内部処理 |
-| ✓ | 3 | **SQL_Execution** | `Open_oraconDB()` | Public | Sub | 🗄️DB操作 |
-| ✓ | 4 | **SQL_Execution** | `SQL_Exe()` | Public | Sub | 🗄️DB操作 |
-| ✓ | 5 | **SQL_Execution** | `SQL_INSERT_UPDATE()` | Public | Sub | 🗄️DB操作 |
-| ✓ | 6 | **SQL_Execution** | `SQL_Delete()` | Public | Sub | 🗄️DB操作 |
-| ✓ | 7 | **SQL_Execution** | `Disp_Sheet()` | Public | Sub | 🗄️DB操作 📊シート操作 |
-| ✓ | 8 | **SQL_Execution** | `Set_Array()` | Public | Sub | 🗄️DB操作 |
-| ✓ | 9 | **Ex画面クリア** | `画面クリア3詰替()` | Public | Sub | 📊シート操作 |
-|  | 10 | **Ex画面クリア** | `modori()` | Public | Sub | 🖥️画面操作 |
-| ✓ | 11 | **Ex詰替品更新** | `詰替品データ更新()` | Public | Sub | 🗄️DB操作 |
-| ✓ | 12 | **Ex積替え品抽出** | `TumikaeHinn()` | Public | Sub | 🗄️DB操作 📊シート操作 |
-| ✓ | 13 | **Ex積替え品抽出** | `DataKakou()` | Public | Sub | 📄VBA内部処理 📊シート操作 |
-| ✓ | 14 | **Ex積替品表示** | `積替製品TB表示()` | Public | Sub | 🗄️DB操作 📊シート操作 |
-|  | 15 | **ExFunction** | `ExchengeDATE()` | Public | Function | 📄VBA内部処理 |
-|  | 16 | **印刷範囲** | `InsatuHanni()` | Public | Sub | 📊シート操作 |
-|  | 17 | **終了処理** | `Bookを閉じる()` | Public | Sub | 🖥️画面操作 |
+|  | 1 | **ThisWorkbook** | `Workbook_BeforeClose()` | Private | Event | 保存ダイアログを抑止して閉じる |
+| ✓ | 2 | **ThisWorkbook** | `Workbook_Open()` | Private | Event | 起動時に画面クリアと積替品抽出を実行 |
+| ✓ | 3 | **SQL_Execution** | `Open_oraconDB()` | Public | Sub | ODBC で DB 接続を開く |
+| ✓ | 4 | **SQL_Execution** | `SQL_Exe()` | Public | Sub | SQL 文を Execute で実行 |
+| ✓ | 5 | **SQL_Execution** | `SQL_INSERT_UPDATE()` | Public | Sub | キー存在チェック付き INSERT/UPDATE |
+| ✓ | 6 | **SQL_Execution** | `SQL_Delete()` | Public | Sub | WHERE 条件で DELETE |
+| ✓ | 7 | **SQL_Execution** | `Disp_Sheet()` | Public | Sub | SQL 結果をシートに転記 |
+| ✓ | 8 | **SQL_Execution** | `Set_Array()` | Public | Sub | SQL 結果を配列に格納 |
+| ✓ | 9 | **Ex画面クリア** | `画面クリア3詰替()` | Public | Sub | 画面データクリア・初期状態復帰 |
+|  | 10 | **Ex画面クリア** | `modori()` | Public | Sub | 積替品シートに戻る |
+| ✓ | 11 | **Ex詰替品更新** | `詰替品データ更新()` | Public | Sub | 変更行を ExSeihinZ へ INSERT/UPDATE |
+| ✓ | 12 | **Ex積替え品抽出** | `TumikaeHinn()` | Public | Sub | DB から積替え対象品を抽出し一覧表示 |
+| ✓ | 13 | **Ex積替え品抽出** | `DataKakou()` | Public | Sub | 抽出データを加工してシートに表示 |
+| ✓ | 14 | **Ex積替品表示** | `積替製品TB表示()` | Public | Sub | 製品マスタと積替えフラグを積替TBに表示 |
+|  | 15 | **ExFunction** | `ExchengeDATE()` | Public | Function | 日付フォーマット変換 |
+|  | 16 | **印刷範囲** | `InsatuHanni()` | Public | Sub | 印刷範囲を設定 |
+|  | 17 | **終了処理** | `Bookを閉じる()` | Public | Sub | ブックを保存せず閉じる |
 
 ### 6.1 **ThisWorkbook**（ThisWorkbook.cls）
 
@@ -467,33 +495,32 @@ VBAからは名前付き範囲`Work`(`A1:H201`)および`Wtb`(`A1:H250`)で参�
 
 ---
 
-## 8. DB接続・外部連携
+## 8. DB 接続・外部連携
 
-### 8.1 ODBC接続
+### 8.1 ODBC 接続設定
 
-| 項目 | 値 |
-| --- | --- |
-| DSN | `ricdb` |
-| UID | `ric` |
-| PWD | `t6101` |
-| 接続先 | 照射管理システム（Oracle DB） |
-| ライブラリ | ADODB (Microsoft ActiveX Data Objects) |
-| CursorLocation | adUseClient |
+| DSN 名 | UID | PWD | 用途 |
+| --- | --- | --- | --- |
+| `ricdb` | `ric` | `t6101` | 照射管理システムDB — 積替フラグの更新と照射状況の参照 |
 
-### 8.2 テーブル一覧
+### 8.2 テーブル一覧（参照/更新区分付き）
 
-| ✓ | No | テーブル名 | 用途 | INSERT | UPDATE | DELETE | SELECT |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ✓ | 1 | `ExSeihinZ` | 製品別積替えフラグ管理 | ○ | ○ | — | ○ |
-|  | 2 | `syoukj3` | 照射工程管理（照射状況・線量計・受付番号・会社名） | — | — | — | ○ |
-|  | 3 | `zaiko` | 在庫管理（受付番号・会社コード・製品コード・納期・パス数） | — | — | — | ○ |
-|  | 4 | `ExKeikakuX` | 計画管理（出荷日・備考） | — | — | — | ○ |
-|  | 5 | `tokumst` | 得意先マスタ（会社名） | — | — | — | ○ |
-|  | 6 | `sehmst` | 製品マスタ（製品名・照射所・会社コード） | — | — | — | ○ |
+> ✓ = INSERT / UPDATE / DELETE の対象テーブル（参照のみのテーブルは ✓ なし）
+
+| ✓ | No | テーブル名 | 区分 | 主な用途 | キー列 | 参照/更新列 |
+| --- | --- | --- | --- | --- | --- | --- |
+| ✓ | 1 | `ExSeihinZ` | **参照＋更新** | 製品別積替えフラグ管理 | `kaisyacd` + `sehncd` | 更新: `kaisyacd`, `sehncd`, `tumikae`（`詰替品データ更新()` から INSERT/UPDATE） |
+|  | 2 | `syoukj3` | 参照 | 照射工程管理（照射状況・線量計・受付番号・会社名） | `uno1` | `syoush_f`, `sykno`, `uno1`, `kainame1` |
+|  | 3 | `zaiko` | 参照 | 在庫管理（受付番号・会社コード・製品コード・納期・パス数） | `uno` | `nouki`, `pass`, `kaisyacd`, `sehncd` |
+|  | 4 | `ExKeikakuX` | 参照 | 計画管理（出荷日・備考） | `uno` | `syukkabi`, `bikou1` |
+|  | 5 | `tokumst` | 参照 | 得意先マスタ（会社名） | `kaisyacd` | `coname` |
+|  | 6 | `sehmst` | 参照 | 製品マスタ（製品名・照射所・会社コード） | `kaisyacd` + `sehncd` | `seiname`, `syouso`, `ric` |
+
+> **「キー列」の定義**: JOIN 条件または UPDATE/DELETE の WHERE 句で使用される列を示す。
 
 ### 8.3 SQL 一覧
 
-#### SQL-1: 積替え品照射状況抽出（`TumikaeHinn()`）
+#### 8.3.1 積替え品照射状況抽出（`TumikaeHinn()` / **Ex積替え品抽出.bas**）
 
 ```sql
 SELECT s.syoush_f, s.sykno, s.uno1, s.kainame1,
@@ -507,13 +534,7 @@ WHERE s.uno1 = z.uno
 ORDER BY s.syoush_f DESC, s.sykno
 ```
 
-| 結合 | 条件 | 種別 |
-| --- | --- | --- |
-| syoukj3 ↔ zaiko | s.uno1 = z.uno | 内部結合 |
-| syoukj3 ↔ ExKeikakuX | s.uno1 = k.uno(+) | 外部結合（Oracle構文） |
-| zaiko ↔ ExSeihinZ | z.kaisyacd = e.kaisyacd(+) AND z.sehncd = e.sehncd(+) | 外部結合（Oracle構文） |
-
-#### SQL-2: 積替製品マスタ取得（`積替製品TB表示()`）
+#### 8.3.2 積替製品マスタ取得（`積替製品TB表示()` / **Ex積替品表示.bas**）
 
 ```sql
 SELECT s.kaisyacd, s.sehncd, s.kaisyacd || s.sehncd,
@@ -527,12 +548,7 @@ WHERE s.kaisyacd = t.kaisyacd(+)
 ORDER BY s.kaisyacd, s.sehncd
 ```
 
-| 結合 | 条件 | 種別 |
-| --- | --- | --- |
-| sehmst ↔ tokumst | s.kaisyacd = t.kaisyacd(+) | 外部結合 |
-| sehmst ↔ ExSeihinZ | s.kaisyacd = e.kaisyacd(+) AND s.sehncd = e.sehncd(+) | 外部結合 |
-
-#### SQL-3: INSERT/UPDATE（`詰替品データ更新()`→`SQL_INSERT_UPDATE()`）
+#### 8.3.3 INSERT/UPDATE（`詰替品データ更新()` / **Ex詰替品更新.bas**）
 
 ```sql
 -- 存在チェック
@@ -556,6 +572,7 @@ WHERE kaisyacd='XXXX' AND sehncd='XXX'
 ## 9. データフロー
 
 各フローは「起点 → 処理 → 結果」の粒度で記述する。
+
 ### 9.1 データフローテーブル
 
 | No | 起点 | → | 終点 | トリガー | 内容 |
@@ -606,7 +623,6 @@ WHERE kaisyacd='XXXX' AND sehncd='XXX'
 ## 10. セキュリティ注意事項
 
 
-
 | No | カテゴリ | 内容 | リスク |
 | --- | --- | --- | --- |
 | 1 | 認証情報ハードコード | DSN=`ricdb`, UID=`ric`, PWD=`t6101` が **SQL_Execution** モジュールに平文記載 | 中：VBAエディタで閲覧可能 |
@@ -617,6 +633,7 @@ WHERE kaisyacd='XXXX' AND sehncd='XXX'
 | 6 | 保存なし終了 | `Workbook_BeforeClose`で`Saved=True`を強制設定し変更破棄を無警告化 | 低：変更破棄が無警告 |
 
 ---
+
 ## スコープ外（本仕様書に含まないもの）
 
 - セル書式（色・罫線・フォント）

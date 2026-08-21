@@ -512,7 +512,7 @@ def _bullet_groups(items):
         if level == 0 or not groups:
             groups.append([text, []])
         else:
-            groups[-1][1].append(("　" * (level // 2 - 1)) + "－ " + text)
+            groups[-1][1].append(("　" * max(1, level // 2)) + text)
     return groups
 
 
@@ -614,9 +614,9 @@ def _fold_procedures(blocks):
         for tok in body:
             if tok[0] == "paragraph":
                 lines.append(tok[1])
-            else:                              # list_items
+            else:                              # list_items（先頭記号なし。字下げのみ）
                 for level, text in tok[1]:
-                    prefix = "・" if level == 0 else ("　" * (level // 2 - 1)) + "－ "
+                    prefix = "" if level == 0 else "　" * max(1, level // 2)
                     lines.append(prefix + text)
         rows.append([name, kind, "\n".join(lines)])
 
@@ -868,7 +868,7 @@ def build_front_matter(doc, cfg):
 
     doc.add_paragraph("本書の取扱い", style="Heading 1")
     for text in cfg["handling"]:
-        add_rich_paragraph(doc, f"・{text}", size=SIZE_BODY,
+        add_rich_paragraph(doc, text, size=SIZE_BODY,
                            indent_left=Twips(180), space_after=Pt(3))
     doc.add_paragraph()
 
@@ -943,8 +943,9 @@ def build_body(doc, tokens):
             add_rich_paragraph(doc, tok[1], size=SIZE_BODY)
 
         elif kind == "list_item":
+            # 先頭記号（・）は使わない。同一行で記号が上下にずれるため字下げのみ。
             indent = Twips(240 + tok[2] * 200)
-            add_rich_paragraph(doc, f"・{tok[1]}", size=SIZE_BODY,
+            add_rich_paragraph(doc, tok[1], size=SIZE_BODY,
                                indent_left=indent, space_after=Pt(2))
 
         elif kind == "table":

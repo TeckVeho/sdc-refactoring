@@ -90,7 +90,7 @@
 
 ### 1.2 ユーザーフォーム一覧
 
-ユーザーフォームは存在しない。
+なし。ユーザーフォームは存在しない。
 
 ### 1.3 VBA モジュール一覧
 
@@ -230,6 +230,11 @@
 
 ---
 
+
+### 3.1 データの入力規則
+
+なし。
+
 ## 4. 数式一覧
 
 | シート | 数式件数 | 備考 |
@@ -261,9 +266,9 @@
 
 ## 5. ボタン・マクロ対応
 
-### 5.1 シート上のボタン（Form Control）
-
 > ✓ = DB 更新・画面遷移・計算実行など副作用のある操作を起動するボタン
+
+### 5.1 シート上のボタン（Form Control）
 
 | ✓ | No | シート | ボタンラベル | 割り当てマクロ | 動作概要 |
 | --- | --- | --- | --- | --- | --- |
@@ -281,9 +286,13 @@
 
 ### 5.3 ユーザーフォーム上のボタン（サマリ）
 
-ユーザーフォームは存在しない。
+なし。ユーザーフォームは存在しない。
 
 ---
+
+### 5.4 CommandBar に動的追加されるボタン
+
+なし。
 
 ## 6. VBA モジュール仕様
 
@@ -347,7 +356,7 @@
 
 | DSN 名 | UID | PWD | 用途 |
 | --- | --- | --- | --- |
-| `ricdb` | ric | t6101 | 照射管理データベースへの接続（ADODB + ODBC） |
+| `ricdb` | `ric` | `t6101` | 照射管理データベースへの接続（ADODB + ODBC） |
 
 ### 8.2 テーブル一覧（参照/更新区分付き）
 
@@ -359,43 +368,67 @@
 |  | 2 | `kyouj2` | 参照 | 2号機運転データ（回転速度記録） | `rectime` | `rectime`, `realspd` |
 |  | 3 | `sengnr3` | 参照 | 3号機線源昇降イベントデータ | `sdate` | `sdate`, `sekitime`, `event` |
 
+> **「キー列」の定義**: JOIN 条件または UPDATE/DELETE の WHERE 句で使用される列を示す。
+
 ### 8.3 SQL 一覧
 
+#### 8.3.1 1号機：期間内イベント別集計（`イベント別集計()` / **イベント集計.bas**）
+
 ```sql
--- 1号機：期間内イベント別集計
 SELECT event, COUNT(*)
 FROM sengnr1
 WHERE sdate >= '{開始日}' AND sdate <= '{終了日}'
 GROUP BY event ORDER BY event
+```
 
--- 1号機：期間内全イベント詳細
+#### 8.3.2 1号機：期間内全イベント詳細（`詳細表示()` / **イベント集計.bas**）
+
+```sql
 SELECT sdate 日付, stime 時刻, timer タイマー, event イベント
 FROM sengnr1
 WHERE sdate >= '{開始日}' AND sdate <= '{終了日}'
+```
 
--- 1号機：開始日未満の最大タイムスタンプ
+#### 8.3.3 1号機：開始日未満の最大タイムスタンプ（`Ric1Kadou()` / **運転時間.bas**）
+
+```sql
 SELECT MAX(sdate||stime) FROM sengnr1
 WHERE sdate||stime < '{開始日時}'
+```
 
--- 1号機：移動照射時間合計（timer<24のレコード合計）
+#### 8.3.4 1号機：移動照射時間合計（`Ric1Kadou()` / **運転時間.bas**）
+
+```sql
 SELECT SUM(TO_NUMBER(timer)) FROM sengnr1
 WHERE TO_NUMBER(timer) < 24
   AND sdate||stime >= '{開始日時}' AND sdate||stime < '{終了日時}'
+```
 
--- 2号機：期間内レコード数
+#### 8.3.5 2号機：期間内レコード数（`Ric2Kadou()` / **運転時間.bas**）
+
+```sql
 SELECT COUNT(*) FROM kyouj2
 WHERE rectime >= '{開始日時}' AND rectime < '{終了日時}'
+```
 
--- 2号機：開始日前の最大時刻 + 期間データ取得
+#### 8.3.6 2号機：開始日前の最大時刻＋期間データ取得（`Ric2Kadou()` / **運転時間.bas**）
+
+```sql
 SELECT RECTIME, REALSPD FROM KYOUJ2
 WHERE rectime >= '{前日最大}' AND rectime <= '{終了日時}'
 ORDER BY rectime
+```
 
--- 3号機：集計開始時・終了時のタイマー
+#### 8.3.7 3号機：集計開始時・終了時のタイマー（`Ric3Kadou()` / **運転時間.bas**）
+
+```sql
 SELECT MAX(sdate) FROM sengnr3
 WHERE sdate < TO_DATE('{日時}', 'yyyy/mm/dd hh24:mi:ss')
+```
 
--- 3号機：該当データ
+#### 8.3.8 3号機：該当データ（`Ric3Kadou()` / **運転時間.bas**）
+
+```sql
 SELECT sdate, sekitime, event FROM sengnr3
 WHERE sdate >= TO_DATE('{開始}', 'yyyy/mm/dd hh24:mi:ss')
   AND sdate <= TO_DATE('{終了}', 'yyyy/mm/dd hh24:mi:ss')
@@ -404,13 +437,14 @@ ORDER BY sdate
 
 ### 8.4 外部ファイル連携
 
-外部ファイル連携は存在しない。
+なし。外部ファイル連携は存在しない。
 
 ---
 
 ## 9. データフロー
 
 各フローは「起点 → 処理 → 結果」の粒度で記述する。
+
 ### 9.1 ブック起動〜初期画面表示
 
 | No | 起点 | 処理 | 結果 |
@@ -554,14 +588,12 @@ ORDER BY sdate
 ## 10. セキュリティ注意事項
 
 
-
 | No | カテゴリ | 内容 | リスク |
 | --- | --- | --- | --- |
-| 1 | DB認証情報 | 接続文字列がVBAソース内にハードコード（DSN=ricdb;UID=ric;PWD=t6101） | 中：VBAエディタで閲覧可能 |
-| 2 | AutoExec | Workbook_Open / BeforeClose 等が自動実行される | 低：意図通りの起動・終了処理 |
-| 3 | ファイル操作 / DB接続 | ファイルを開く可能性（実際は DB 接続で使用） | 低：DB 接続またはファイルオープン |
+| 1 | 認証情報ハードコード | DSN=`ricdb`, UID=`ric`, PWD=`t6101` が VBA ソースに平文記載 | 中：VBAエディタで閲覧可能 |
 
 ---
+
 ## スコープ外（本仕様書に含まないもの）
 
 - セル書式（色・罫線・フォント）
